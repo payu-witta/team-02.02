@@ -241,6 +241,14 @@ class ExpressApp implements IApp {
 
     // ── RSVP routes ─────────────────────────────────────────────────
 
+    this.app.get(
+      "/events/:eventId/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        await this.rsvpController.handleGetStatus(req, res);
+      }),
+    );
+
     this.app.post(
       "/events/:eventId/rsvp",
       asyncHandler(async (req, res) => {

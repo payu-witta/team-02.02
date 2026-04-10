@@ -60,8 +60,40 @@ class RsvpController implements IRsvpController {
   }
 
   async handleGetStatus(req: Request, res: Response): Promise<void> {
-    // Implemented in next commit.
-    res.status(501).render("partials/error", { message: "Not implemented.", layout: false });
+    const user = getAuthenticatedUser(req.session as AppSessionStore);
+
+    if (!user) {
+      res.status(401).render("partials/error", {
+        message: "You must be logged in to view RSVP status.",
+        layout: false,
+      });
+      return;
+    }
+
+    const eventId = typeof req.params.eventId === "string" ? req.params.eventId : "";
+
+    const rsvpResult = await this.rsvpService.getRsvpForUser(eventId, user.userId);
+    if (rsvpResult.ok === false) {
+      const error = rsvpResult.value;
+      res.status(this.mapErrorStatus(error.name)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    const rsvp = rsvpResult.value;
+    let waitlistPosition: number | null = null;
+
+    if (rsvp !== null && rsvp.status === "waitlisted") {
+      const posResult = await this.rsvpService.getWaitlistPosition(eventId, user.userId);
+      if (posResult.ok) {
+        waitlistPosition = posResult.value;
+      }
+    }
+
+    this.logger.info(`GET RSVP status for user ${user.userId} on event ${eventId}`);
+    res.json({ rsvp, waitlistPosition });
   }
 }
 
