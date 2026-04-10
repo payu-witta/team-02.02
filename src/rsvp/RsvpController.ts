@@ -42,11 +42,12 @@ class RsvpController implements IRsvpController {
       userRole: user.role,
     });
 
-    if (!result.ok) {
-      const status = this.mapErrorStatus(result.value.name);
-      this.logger.warn(`RSVP toggle failed for event ${eventId}: ${result.value.message}`);
+    if (result.ok === false) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error.name);
+      this.logger.warn(`RSVP toggle failed for event ${eventId}: ${error.message}`);
       res.status(status).render("partials/error", {
-        message: result.value.message,
+        message: error.message,
         layout: false,
       });
       return;
