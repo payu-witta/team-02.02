@@ -18,6 +18,7 @@ export interface ToggleRsvpInput {
 
 export interface IRsvpService {
   toggleRsvp(input: ToggleRsvpInput): Promise<Result<Rsvp, RsvpError>>;
+  getRsvpForUser(eventId: string, userId: string): Promise<Result<Rsvp | null, RsvpError>>;
   getWaitlistPosition(eventId: string, userId: string): Promise<Result<number | null, RsvpError>>;
 }
 
@@ -85,6 +86,18 @@ class RsvpService implements IRsvpService {
     const upserted = await this.rsvpRepo.upsert({ eventId, userId, status: targetStatus });
     this.logger.info(`User ${userId} RSVPed to event ${eventId} as "${targetStatus}"`);
     return Ok(upserted.value);
+  }
+
+  async getRsvpForUser(
+    eventId: string,
+    userId: string,
+  ): Promise<Result<Rsvp | null, RsvpError>> {
+    const eventResult = await this.eventRepo.findById(eventId);
+    if (eventResult.ok === false) {
+      return Err(EventNotFoundError(`Event ${eventId} not found.`));
+    }
+    const result = await this.rsvpRepo.findByEventAndUser(eventId, userId);
+    return Ok(result.value);
   }
 
   async getWaitlistPosition(
