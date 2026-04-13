@@ -33,5 +33,23 @@ export class EventService {
 
     return await this.eventRepo.update(input.eventId, { status: "published" });
   }
+
+  async cancelEvent(input: EventTransitionInput): Promise<Result<Event, EventError>> {
+    const eventResult = await this.eventRepo.findById(input.eventId);
+    if (!eventResult.ok) return eventResult;
+
+    const event = eventResult.value;
+
+    if (event.organizerId !== input.actingUserId && input.actingUserRole !== "admin") {
+      return Err<EventError>({ name: "UnauthorizedError", message: "Only organizers or admins can cancel." });
+    }
+
+    if (event.status === "past" || event.status === "cancelled") {
+      return Err<EventError>({ name: "InvalidTransitionError", message: `Cannot cancel a ${event.status} event.` });
+    }
+
+    return await this.eventRepo.update(input.eventId, { status: "cancelled" });
+  }
   // Feature 8 
+  
 }
