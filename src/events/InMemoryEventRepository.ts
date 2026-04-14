@@ -1,28 +1,74 @@
 import { randomUUID } from "node:crypto";
-import { Ok, Err } from "../lib/result";
-import type { Result } from "../lib/result";
+import { Err, Ok } from "../lib/result";
+import { EventNotFoundError } from "./errors";
 import type {
   Event,
   EventFilters,
   CreateEventData,
   IEventRepository,
-} from "./IEventRepository";
+} from "./InEventRepository";
+
+export const DEMO_EVENTS: Event[] = [
+  {
+    id: "event-published-limited",
+    title: "Community Cleanup",
+    description: "Help clean up the local park.",
+    location: "Riverside Park",
+    category: "volunteer",
+    status: "published",
+    capacity: 3,
+    startDatetime: new Date("2026-05-01T10:00:00"),
+    endDatetime: new Date("2026-05-01T12:00:00"),
+    organizerId: "user-staff",
+    createdAt: new Date("2026-04-01"),
+    updatedAt: new Date("2026-04-01"),
+  },
+  {
+    id: "event-published-open",
+    title: "Tech Meetup",
+    description: "Monthly tech talk — all welcome.",
+    location: "Community Center",
+    category: "educational",
+    status: "published",
+    capacity: undefined,
+    startDatetime: new Date("2026-05-15T18:00:00"),
+    endDatetime: new Date("2026-05-15T20:00:00"),
+    organizerId: "user-staff",
+    createdAt: new Date("2026-04-01"),
+    updatedAt: new Date("2026-04-01"),
+  },
+  {
+    id: "event-draft",
+    title: "Art Show (Draft)",
+    description: "Not yet published — RSVP should be rejected.",
+    location: "Gallery",
+    category: "arts",
+    status: "draft",
+    startDatetime: new Date("2026-06-01T10:00:00"),
+    endDatetime: new Date("2026-06-01T14:00:00"),
+    organizerId: "user-staff",
+    createdAt: new Date("2026-04-01"),
+    updatedAt: new Date("2026-04-01"),
+  },
+];
 
 class InMemoryEventRepository implements IEventRepository {
-  private readonly store: Map<string, Event> = new Map();
+  private readonly events: Map<string, Event>;
 
-  async findById(
-    id: string,
-  ): Promise<Result<Event, { name: "EventNotFoundError"; message: string }>> {
-    const event = this.store.get(id);
+  constructor(seed: Event[]) {
+    this.events = new Map(seed.map((e) => [e.id, { ...e }]));
+  }
+
+  async findById(id: string) {
+    const event = this.events.get(id);
     if (!event) {
-      return Err({ name: "EventNotFoundError" as const, message: `Event "${id}" not found.` });
+      return Err(EventNotFoundError(`Event "${id}" not found.`));
     }
     return Ok({ ...event });
   }
 
-  async findAll(filters?: EventFilters): Promise<Result<Event[], never>> {
-    let results = Array.from(this.store.values());
+  async findAll(filters?: EventFilters) {
+    let results = Array.from(this.events.values());
 
     if (filters) {
       if (filters.organizerId !== undefined) {
@@ -80,7 +126,7 @@ class InMemoryEventRepository implements IEventRepository {
     return Ok(results.map((e) => ({ ...e })));
   }
 
-  async create(data: CreateEventData): Promise<Result<Event, never>> {
+  async create(data: CreateEventData) {
     const now = new Date();
     const event: Event = {
       id: randomUUID(),
@@ -89,24 +135,24 @@ class InMemoryEventRepository implements IEventRepository {
       createdAt: now,
       updatedAt: now,
     };
-    this.store.set(event.id, { ...event });
+    this.events.set(event.id, { ...event });
     return Ok({ ...event });
   }
 
   async update(
     id: string,
     changes: Partial<Omit<Event, "id" | "createdAt" | "organizerId">>,
-  ): Promise<Result<Event, { name: "EventNotFoundError"; message: string }>> {
-    const existing = this.store.get(id);
+  ) {
+    const existing = this.events.get(id);
     if (!existing) {
-      return Err({ name: "EventNotFoundError" as const, message: `Event "${id}" not found.` });
+      return Err(EventNotFoundError(`Event "${id}" not found.`));
     }
     const updated: Event = { ...existing, ...changes, updatedAt: new Date() };
-    this.store.set(id, { ...updated });
+    this.events.set(id, { ...updated });
     return Ok({ ...updated });
   }
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
-  return new InMemoryEventRepository();
+  return new InMemoryEventRepository([...DEMO_EVENTS]);
 }
