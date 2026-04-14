@@ -18,6 +18,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import type { IEventController } from "./events/IEventController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -37,6 +38,7 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
+    private readonly eventController: IEventController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -257,6 +259,55 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event routes (Features 1 & 3) ───────────────────────────────
+
+    this.app.get(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can create events.")) {
+          return;
+        }
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showCreateForm(res, session);
+      }),
+    );
+
+    this.app.post(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can create events.")) {
+          return;
+        }
+        const session = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.createFromForm(res, req.body as Record<string, unknown>, currentUser, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
+          return;
+        }
+        const session = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.showEditForm(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
+          return;
+        }
+        const session = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.editFromForm(res, String(req.params.id), req.body as Record<string, unknown>, currentUser, session);
+      }),
+    );
+
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
 
@@ -293,7 +344,8 @@ class ExpressApp implements IApp {
 export function CreateApp(
   authController: IAuthController,
   rsvpController: IRsvpController,
+  eventController: IEventController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, rsvpController, logger);
+  return new ExpressApp(authController, rsvpController, eventController, logger);
 }
