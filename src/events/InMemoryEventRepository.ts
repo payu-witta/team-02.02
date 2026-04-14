@@ -1,11 +1,12 @@
-// STUB — owned by Avin (Feature 1). This file exists so the RSVP feature
-// can be wired and tested before Avin's full implementation lands.
-// Avin will replace this with the real InMemoryEventRepository.
-
 import { randomUUID } from "node:crypto";
 import { Err, Ok } from "../lib/result";
 import { EventNotFoundError } from "./errors";
-import type { CreateEventData, Event, EventFilters, IEventRepository } from "./InEventRepository";
+import type {
+  Event,
+  EventFilters,
+  CreateEventData,
+  IEventRepository,
+} from "./InEventRepository";
 
 export const DEMO_EVENTS: Event[] = [
   {
@@ -59,32 +60,96 @@ class InMemoryEventRepository implements IEventRepository {
   }
 
   async findById(id: string) {
-    const event = this.events.get(id) ?? null;
-    if (!event) return Err(EventNotFoundError(`Event "${id}" not found.`));
+    const event = this.events.get(id);
+    if (!event) {
+      return Err(EventNotFoundError(`Event "${id}" not found.`));
+    }
     return Ok({ ...event });
   }
 
-  async findAll(_filters?: EventFilters) {
-    return Ok([...this.events.values()]);
+  async findAll(filters?: EventFilters) {
+    let results = Array.from(this.events.values());
+
+    if (filters) {
+      if (filters.organizerId !== undefined) {
+        results = results.filter((e) => e.organizerId === filters.organizerId);
+      }
+
+      if (filters.status !== undefined) {
+        const statuses = Array.isArray(filters.status)
+          ? filters.status
+          : [filters.status];
+        results = results.filter((e) => statuses.includes(e.status));
+      }
+
+      if (filters.category !== undefined) {
+        results = results.filter((e) => e.category === filters.category);
+      }
+
+      if (filters.search !== undefined) {
+        const term = filters.search.toLowerCase();
+        results = results.filter(
+          (e) =>
+            e.title.toLowerCase().includes(term) ||
+            e.description.toLowerCase().includes(term) ||
+            e.location.toLowerCase().includes(term),
+        );
+      }
+
+      if (filters.timeframe !== undefined) {
+        const now = new Date();
+        if (filters.timeframe === "upcoming") {
+          results = results.filter((e) => e.startDatetime >= now);
+        } else if (filters.timeframe === "this_week") {
+          const weekEnd = new Date(now);
+          weekEnd.setDate(weekEnd.getDate() + 7);
+          results = results.filter(
+            (e) => e.startDatetime >= now && e.startDatetime <= weekEnd,
+          );
+        } else if (filters.timeframe === "this_weekend") {
+          const day = now.getDay();
+          const daysUntilSat = day === 6 ? 0 : 6 - day;
+          const sat = new Date(now);
+          sat.setDate(now.getDate() + daysUntilSat);
+          sat.setHours(0, 0, 0, 0);
+          const sun = new Date(sat);
+          sun.setDate(sat.getDate() + 1);
+          sun.setHours(23, 59, 59, 999);
+          results = results.filter(
+            (e) => e.startDatetime >= sat && e.startDatetime <= sun,
+          );
+        }
+      }
+    }
+
+    results.sort((a, b) => a.startDatetime.getTime() - b.startDatetime.getTime());
+    return Ok(results.map((e) => ({ ...e })));
   }
 
   async create(data: CreateEventData) {
+    const now = new Date();
     const event: Event = {
       id: randomUUID(),
       ...data,
       status: "draft",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
-    this.events.set(event.id, event);
+    this.events.set(event.id, { ...event });
     return Ok({ ...event });
   }
 
-  async update(id: string, changes: Partial<Omit<Event, "id" | "createdAt" | "organizerId">>) {
-    const event = this.events.get(id);
-    if (!event) return Err(EventNotFoundError(`Event "${id}" not found.`));
-    Object.assign(event, changes, { updatedAt: new Date() });
-    return Ok({ ...event });
+  async update(
+    id: string,
+    changes: Partial<Omit<Event, "id" | "createdAt" | "organizerId">>,
+  ) {
+    const existing = this.events.get(id);
+    if (!existing) {
+      return Err(EventNotFoundError(`Event "${id}" not found.`));
+    }
+    const updated: Event = { ...existing, ...changes, updatedAt: new Date() };
+    this.events.set(id, { ...updated });
+    return Ok({ ...updated });
   }
 }
 
