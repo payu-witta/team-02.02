@@ -33,10 +33,16 @@ function validateFields(
     if (!fields.title || fields.title.trim().length === 0) {
       return InvalidInputError("Title is required.");
     }
+    if (fields.title.trim().length > 100) {
+      return InvalidInputError("Title must be 100 characters or fewer.");
+    }
   }
   if (requireAll || fields.description !== undefined) {
     if (!fields.description || fields.description.trim().length === 0) {
       return InvalidInputError("Description is required.");
+    }
+    if (fields.description.trim().length > 1000) {
+      return InvalidInputError("Description must be 1000 characters or fewer.");
     }
   }
   if (requireAll || fields.location !== undefined) {
@@ -111,6 +117,10 @@ export function CreateEventService(repo: IEventRepository): IEventService {
         true,
       );
       if (err) return Err(err);
+
+      if (input.startDatetime <= new Date()) {
+        return Err(InvalidInputError("Start date/time must be in the future."));
+      }
 
       const data: CreateEventData = {
         title: input.title.trim(),
