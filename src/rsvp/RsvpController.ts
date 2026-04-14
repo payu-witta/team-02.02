@@ -103,7 +103,7 @@ class RsvpController implements IRsvpController {
     }
 
     this.logger.info(`GET RSVP status for user ${user.userId} on event ${eventId}`);
-    res.json({ rsvp, waitlistPosition });
+    res.render("rsvp/partials/button", { eventId, rsvp, waitlistPosition, layout: false });
   }
 }
 
