@@ -1,6 +1,6 @@
 import type { Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
-import type { Event } from "./IEventRepository";
+import type { Event } from "./InEventRepository";
 import type { EventError } from "./errors";
 
 export interface CreateEventInput {

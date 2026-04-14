@@ -1,5 +1,5 @@
-import { Ok, Err } from "../lib/result";
-import type { IEventRepository, Event, CreateEventData } from "./IEventRepository";
+import { Result, Ok, Err } from "../lib/result";
+import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
 import type { IEventService, CreateEventInput, EditEventInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
@@ -7,7 +7,11 @@ import {
   InvalidInputError,
   UnauthorizedError,
   InvalidStateError,
+  InvalidTransitionError,
 } from "./errors";
+import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
+
+// ── Shared validation (Features 1 & 3) ──────────────────────────────────────
 
 const VALID_CATEGORIES = [
   "social",
@@ -88,6 +92,8 @@ function validateFields(
 }
 
 export { validateFields };
+
+// ── Features 1 & 3 (Avin) — event creation and editing ──────────────────────
 
 export function CreateEventService(repo: IEventRepository): IEventService {
   return {
@@ -195,4 +201,53 @@ export function CreateEventService(repo: IEventRepository): IEventService {
       return Ok(updateResult.value);
     },
   };
+}
+
+// ── Features 5 & 8 (Khang) — event lifecycle transitions ────────────────────
+
+export interface EventTransitionInput {
+  eventId: string;
+  actingUserId: string;
+  actingUserRole: string;
+}
+
+export class EventService {
+  constructor(
+    private eventRepo: IEventRepository,
+    private rsvpRepo: IRsvpRepository,
+  ) {}
+
+  async publishEvent(input: EventTransitionInput): Promise<Result<Event, EventError>> {
+    const eventResult = await this.eventRepo.findById(input.eventId);
+    if (!eventResult.ok) return eventResult;
+
+    const event = eventResult.value;
+
+    if (event.organizerId !== input.actingUserId && input.actingUserRole !== "admin") {
+      return Err(UnauthorizedError("Only organizers or admins can publish."));
+    }
+
+    if (event.status !== "draft") {
+      return Err(InvalidTransitionError("Only draft events can be published."));
+    }
+
+    return this.eventRepo.update(input.eventId, { status: "published" });
+  }
+
+  async cancelEvent(input: EventTransitionInput): Promise<Result<Event, EventError>> {
+    const eventResult = await this.eventRepo.findById(input.eventId);
+    if (!eventResult.ok) return eventResult;
+
+    const event = eventResult.value;
+
+    if (event.organizerId !== input.actingUserId && input.actingUserRole !== "admin") {
+      return Err(UnauthorizedError("Only organizers or admins can cancel."));
+    }
+
+    if (event.status === "past" || event.status === "cancelled") {
+      return Err(InvalidTransitionError(`Cannot cancel a ${event.status} event.`));
+    }
+
+    return this.eventRepo.update(input.eventId, { status: "cancelled" });
+  }
 }
