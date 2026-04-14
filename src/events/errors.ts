@@ -1,3 +1,6 @@
+// Owned by Avin (Feature 1 — Event Creation). Scaffolded here as a compile-time
+// dependency for the RSVP service. Do not change error names without updating CONTRACTS.md.
+
 export type EventError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "InvalidInputError"; message: string }
