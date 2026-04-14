@@ -66,6 +66,11 @@ export class EventService {
         };
       })
     );
-    
+
+    return Ok({
+      published: eventsWithCounts.filter(e => e.status === "published"),
+      draft: eventsWithCounts.filter(e => e.status === "draft"),
+      archived: eventsWithCounts.filter(e => e.status === "cancelled" || e.status === "past")
+    }); 
   }
 }
