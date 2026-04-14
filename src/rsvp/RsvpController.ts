@@ -53,10 +53,20 @@ class RsvpController implements IRsvpController {
       return;
     }
 
+    const rsvp = result.value;
     this.logger.info(
-      `User ${user.userId} toggled RSVP for event ${eventId} → "${result.value.status}"`,
+      `User ${user.userId} toggled RSVP for event ${eventId} → "${rsvp.status}"`,
     );
-    res.redirect(`/home`);
+
+    let waitlistPosition: number | null = null;
+    if (rsvp.status === "waitlisted") {
+      const posResult = await this.rsvpService.getWaitlistPosition(eventId, user.userId);
+      if (posResult.ok) {
+        waitlistPosition = posResult.value;
+      }
+    }
+
+    res.render("rsvp/partials/button", { eventId, rsvp, waitlistPosition, layout: false });
   }
 
   async handleGetStatus(req: Request, res: Response): Promise<void> {
