@@ -3,6 +3,10 @@ import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
 import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
+import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
+import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
+import { CreateRsvpController } from "./rsvp/RsvpController";
+import { CreateRsvpService } from "./rsvp/RsvpService";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
 import { CreateLoggingService } from "./service/LoggingService";
@@ -18,5 +22,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  return CreateApp(authController, resolvedLogger);
+  // RSVP wiring (Features 4 & 9)
+  const eventRepo = CreateInMemoryEventRepository();
+  const rsvpRepo = CreateInMemoryRsvpRepository();
+  const rsvpService = CreateRsvpService(rsvpRepo, eventRepo, resolvedLogger);
+  const rsvpController = CreateRsvpController(rsvpService, resolvedLogger);
+
+  return CreateApp(authController, rsvpController, resolvedLogger);
 }
