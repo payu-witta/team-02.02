@@ -287,6 +287,17 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        const query = typeof req.query.query === "string" ? req.query.query : "";
+        this.logger.info('Get /events/search?q=${JSON.stringyify(query)}');
+        await this.eventController.searchEvents(res, query, session);
+      }),
+    );
+
+    this.app.get(
       "/events/:id",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -347,7 +358,7 @@ class ExpressApp implements IApp {
         const category = typeof req.query.category === "string" ? req.query.category : "";
         const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
 
-        const eventsResult = await this.eventFilterService.listPublishedUpcoming({
+        const eventsResult = await this.eventFilterService.filterEvents({
           category: category.trim() ? category : undefined,
           timeframe:
             timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"

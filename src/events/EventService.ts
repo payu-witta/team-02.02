@@ -1,6 +1,6 @@
 import { Result, Ok, Err } from "../lib/result";
 import type { IEventRepository, Event, CreateEventData, EventFilters } from "./InEventRepository";
-import type { IEventService, CreateEventInput, EditEventInput } from "./IEventService";
+import type { IEventService, CreateEventInput, EditEventInput, SearchEventsInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
   EventNotFoundError,
@@ -195,8 +195,20 @@ export function CreateEventService(repo: IEventRepository): IEventService {
 
       return Ok(updateResult.value);
     },
+
+    // Feature 10 - Event Search (Sprint 1)
+    async searchEvents(input: SearchEventsInput) {
+      const query = input.query.trim();
+      const filters = {
+        status: "published" as const,
+        timeframe: "upcoming" as const,
+        ...(query.length > 0 ? { search: query } : {}),
+      };
+      return repo.findAll(filters);
+    },
   };
 }
+
 
 export interface EventTransitionInput {
   eventId: string;
@@ -269,14 +281,24 @@ export class EventService {
   }
 }
 
+export interface FilterEventsInput {
+  category?: string;
+  timeframe?: "upcoming" | "this_week" |"this_weekend";
+}
+
+export interface IEventFilterService {
+  filterEvents(input: FilterEventsInput): Promise<Result<Event[], EventError>>;
+}
+
 export function CreateEventFilterService(repo: IEventRepository): IEventFilterService {
   return {
-    async listPublishedUpcoming(filters = {}) {
-      return repo.findAll({
-        status: "published",
-        timeframe: "upcoming",
-        ...filters,
-      });
+    async filterEvents(input: FilterEventsInput) {
+      const filters: EventFilters = {
+        status: "published" as const,
+        ...(input.category ? { category: input.category } : {}),
+        ...(input.timeframe ? { timeframe: input.timeframe } : {}),
+      };
+      return repo.findAll(filters);
     },
   };
 }
