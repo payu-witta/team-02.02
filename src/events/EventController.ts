@@ -38,6 +38,25 @@ class EventController implements IEventController {
     private readonly logger: ILoggingService,
   ) {}
 
+  async showDetail(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.getEventById(eventId);
+
+    if (result.ok === false) {
+      this.logger.warn(`Event detail load failed: ${result.value.message}`);
+      res.status(404).render("partials/error", {
+        message: result.value.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/detail", { session, event: result.value });
+  }
+
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
     res.render("events/create", { session, pageError: null });
   }

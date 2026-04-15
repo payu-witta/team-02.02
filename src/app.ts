@@ -285,6 +285,15 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/:id",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showDetail(res, String(req.params.id), session);
+      }),
+    );
+
+    this.app.get(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
         if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
