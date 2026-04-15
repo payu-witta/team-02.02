@@ -16,6 +16,7 @@ import {
   recordPageView,
   touchAppSession,
 } from "./session/AppSession";
+import type { IEventService } from "./events/EventService";
 import { ILoggingService } from "./service/LoggingService";
 
 type AsyncRequestHandler = RequestHandler;
@@ -35,6 +36,7 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
+    private readonly eventService: IEventService,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -253,6 +255,35 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Feature 6: event list filters (category + timeframe) ───────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const category = typeof req.query.category === "string" ? req.query.category : "";
+        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
+
+        const eventsResult = await this.eventService.listPublishedUpcoming({
+          category: category.trim() ? category : undefined,
+          timeframe:
+            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
+              ? timeframe
+              : undefined,
+        });
+
+        const session = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${session.browserLabel}`);
+        res.json({
+          events: eventsResult.ok ? eventsResult.value : [],
+          filters: { category, timeframe },
+        });
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -272,7 +303,8 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
+  eventService: IEventService,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, eventService, logger);
 }
