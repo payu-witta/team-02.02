@@ -1,6 +1,6 @@
 import { Result, Ok, Err } from "../lib/result";
 import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
-import type { IEventService, CreateEventInput, EditEventInput, SearchEventsInput } from "./IEventService";
+import type { IEventService, CreateEventInput, EditEventInput, SearchEventsInput, FilterEventsInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
   EventNotFoundError,
@@ -201,7 +201,17 @@ export function CreateEventService(repo: IEventRepository): IEventService {
       return Ok(updateResult.value);
     },
 
-    //Feature 10 - Event Search (Sprint 1)
+    // Feature 6 - Category and Date Filter (Sprint 1)
+    async filterEvents(input: FilterEventsInput) {
+      const filters = {
+        status: "published" as const,
+        ...(input.category ? { category: input.category } : {}),
+        ...(input.date ? { date: input.date } : {}),
+      };
+      return repo.findAll(filters);
+    },
+
+    // Feature 10 - Event Search (Sprint 1)
     async searchEvents(input: SearchEventsInput) {
       const query = input.query.trim();
       const filters = {

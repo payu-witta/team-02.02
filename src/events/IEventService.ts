@@ -29,6 +29,11 @@ export interface EditEventInput {
   endDatetime?: Date;
 }
 
+export interface FilterEventsInput {
+  category?: string;
+  date?: string;
+}
+
 export interface SearchEventsInput {
   query: string;
 }
@@ -37,5 +42,6 @@ export interface IEventService {
   getEventById(id: string): Promise<Result<Event, EventError>>;
   createEvent(input: CreateEventInput): Promise<Result<Event, EventError>>;
   editEvent(input: EditEventInput): Promise<Result<Event, EventError>>;
+  filterEvents(input: FilterEventsInput): Promise<Result<Event[], EventError>>; //Feature 6
   searchEvents(input: SearchEventsInput): Promise<Result<Event[], EventError>>; //Feature 10
 }

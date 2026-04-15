@@ -160,7 +160,23 @@ class EventController implements IEventController {
     this.logger.info(`Event updated: ${result.value.id}`);
     res.redirect(`/events/${result.value.id}`);
   }
-  //Feature 10 - Event Search (Sprint 1)
+
+  // Feature 6 - Category and Date Filter (Sprint 1)
+  async filterEvents(
+    res: Response,
+    category: string,
+    date: string,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.filterEvents({ category, date });
+    if (result.ok === false) {
+      res.status(500).render("partials/error", { message: result.value.message, layout: false });
+      return;
+  }
+  res.render("events/list", { session, events: result.value });
+  }
+
+  // Feature 10 - Event Search (Sprint 1)
   async searchEvents(
     res: Response,
     query: string,
