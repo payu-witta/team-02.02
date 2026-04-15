@@ -13,9 +13,12 @@ describe("EventService - Transitions", () => {
     mockEventRepo = {
       findById: jest.fn(),
       update: jest.fn(),
+      findAll: jest.fn(),
     } as any;
 
-    mockRsvpRepo = {} as any;
+    mockRsvpRepo = {
+      countGoingByEventId: jest.fn(),
+    } as any;
 
     service = new EventService(mockEventRepo, mockRsvpRepo);
   });
@@ -110,4 +113,66 @@ describe("EventService - Transitions", () => {
       }
     });
   });
+
+  describe("getOrganizerDashboard", () => {
+    const mockEvents = [
+      { id: "e1", status: "published", organizerId: "user-1" },
+      { id: "e2", status: "draft", organizerId: "user-1" },
+      { id: "e3", status: "past", organizerId: "user-1" },
+      { id: "e4", status: "cancelled", organizerId: "user-1" },
+    ];
+
+    it("should fetch all events for admins and group them correctly", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Ok(mockEvents as any));
+      mockRsvpRepo.countGoingByEventId.mockResolvedValue(Ok(5));
+
+      const result = await service.getOrganizerDashboard("admin-1", "admin");
+
+      if (!result.ok) throw new Error("Expected Ok result");
+
+      expect(mockEventRepo.findAll).toHaveBeenCalledWith({});
+      
+      expect(mockRsvpRepo.countGoingByEventId).toHaveBeenCalledTimes(4);
+
+      expect(result.value.published).toHaveLength(1);
+      expect(result.value.draft).toHaveLength(1);
+      expect(result.value.archived).toHaveLength(2);
+      
+      expect(result.value.published[0].attendeeCount).toBe(5);
+    });
+
+    it("should apply an organizerId filter for regular users", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Ok([]));
+      
+      await service.getOrganizerDashboard("user-1", "organizer");
+
+      expect(mockEventRepo.findAll).toHaveBeenCalledWith({ organizerId: "user-1" });
+    });
+
+    it("should default attendeeCount to 0 if rsvp repo fails", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Ok([
+        { id: "e1", status: "published", organizerId: "user-1" }
+      ] as any));
+    
+      mockRsvpRepo.countGoingByEventId.mockResolvedValue(Err({ name: "RsvpError", message: "DB down" }) as any);
+
+      const result = await service.getOrganizerDashboard("user-1", "organizer");
+
+      if (!result.ok) throw new Error("Expected Ok result");
+
+      expect(result.value.published[0].attendeeCount).toBe(0);
+    });
+
+    it("should return an error if fetching events fails", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Err({ name: "DbError", message: "Connection failed" }) as any);
+
+      const result = await service.getOrganizerDashboard("user-1", "organizer");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect((result.value as any).name).toBe("DbError");
+      }
+    });
+  });
+
 });
