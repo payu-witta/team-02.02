@@ -1,6 +1,6 @@
 import { Result, Ok, Err } from "../lib/result";
 import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
-import type { IEventService, CreateEventInput, EditEventInput } from "./IEventService";
+import type { IEventService, CreateEventInput, EditEventInput, EventTransitionInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
   EventNotFoundError,
@@ -205,11 +205,6 @@ export function CreateEventService(repo: IEventRepository): IEventService {
 
 // ── Features 5 & 8 (Khang) — event lifecycle transitions ────────────────────
 
-export interface EventTransitionInput {
-  eventId: string;
-  actingUserId: string;
-  actingUserRole: string;
-}
 
 export class EventService {
   constructor(

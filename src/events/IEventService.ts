@@ -34,3 +34,9 @@ export interface IEventService {
   createEvent(input: CreateEventInput): Promise<Result<Event, EventError>>;
   editEvent(input: EditEventInput): Promise<Result<Event, EventError>>;
 }
+
+export interface EventTransitionInput {
+  eventId: string;
+  actingUserId: string;
+  actingUserRole: string;
+}
