@@ -28,4 +28,18 @@ export interface IEventController {
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void>;
+
+  publishEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  cancelEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
 }

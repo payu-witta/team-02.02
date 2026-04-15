@@ -160,6 +160,56 @@ class EventController implements IEventController {
     this.logger.info(`Event updated: ${result.value.id}`);
     res.redirect(`/events/${result.value.id}`);
   }
+
+  // Feature 5
+  async publishEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.publishEvent({
+      eventId,
+      actingUserId: currentUser.userId,
+      actingUserRole: currentUser.role,
+    });
+
+    if (result.ok === false) {
+      const status = mapErrorStatus(result.value);
+      this.logger.warn(`Publish failed for ${eventId}: ${result.value.message}`);
+      // For Sprint 1, we'll redirect back with a status, 
+      // Sprint 2 will handle this with HTMX inline errors
+      res.status(status).redirect(`/events/${eventId}`);
+      return;
+    }
+
+    this.logger.info(`Event published: ${eventId}`);
+    res.redirect(`/events/${eventId}`);
+  }
+
+  async cancelEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.cancelEvent({
+      eventId,
+      actingUserId: currentUser.userId,
+      actingUserRole: currentUser.role,
+    });
+
+    if (result.ok === false) {
+      const status = mapErrorStatus(result.value);
+      this.logger.warn(`Cancellation failed for ${eventId}: ${result.value.message}`);
+      res.status(status).redirect(`/events/${eventId}`);
+      return;
+    }
+
+    this.logger.info(`Event cancelled: ${eventId}`);
+    res.redirect(`/events/${eventId}`);
+  }
+
 }
 
 export function CreateEventController(
