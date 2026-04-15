@@ -46,7 +46,7 @@ export interface EventTransitionInput {
 }
 
 export interface OrganizerDashboardData {
-  published: Event[];
-  draft: Event[];
-  archived: Event[];
+  published: (Event & { attendeeCount: number })[];
+  draft: (Event & { attendeeCount: number })[];
+  archived: (Event & { attendeeCount: number })[];
 }

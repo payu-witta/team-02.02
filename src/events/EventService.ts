@@ -1,6 +1,6 @@
 import { Result, Ok, Err } from "../lib/result";
 import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
-import type { IEventService, CreateEventInput, EditEventInput, EventTransitionInput } from "./IEventService";
+import type { IEventService, CreateEventInput, EditEventInput, EventTransitionInput, OrganizerDashboardData } from "./IEventService";
 import type { EventError } from "./errors";
 import {
   EventNotFoundError,
@@ -10,6 +10,7 @@ import {
   InvalidTransitionError,
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
+import { UserRole } from "../auth/User";
 
 // ── Shared validation (Features 1 & 3) ──────────────────────────────────────
 
@@ -239,11 +240,11 @@ export class EventService implements IEventService {
     return this.eventRepo.update(input.eventId, { status: "cancelled" });
   }
   // Feature 8
-  async getOrganizerDashboard(actingUserId: string, role: string) {
+  async getOrganizerDashboard(actingUserId: string, role: UserRole): Promise<Result<OrganizerDashboardData, EventError>> {
     const filter = role === "admin" ? {} : { organizerId: actingUserId };
     const eventsResult = await this.eventRepo.findAll(filter);
     
-    if (!eventsResult.ok) return eventsResult;
+    if (!eventsResult.ok) return Err({ name: "InvalidStateError", message: "Failed to fetch events" });;
 
     const eventsWithCounts = await Promise.all(
       eventsResult.value.map(async (event) => {
@@ -256,10 +257,11 @@ export class EventService implements IEventService {
     );
 
     return Ok({
-      published: eventsWithCounts.filter(e => e.status === "published"),
-      draft: eventsWithCounts.filter(e => e.status === "draft"),
-      archived: eventsWithCounts.filter(e => e.status === "cancelled" || e.status === "past")
-    }); 
+    published: eventsWithCounts.filter(e => e.status === "published"),
+    draft: eventsWithCounts.filter(e => e.status === "draft"),
+    archived: eventsWithCounts.filter(e => e.status === "cancelled" || e.status === "past")
+  }); 
+
   }
 }
 
