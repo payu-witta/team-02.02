@@ -10,7 +10,6 @@ import {
 } from "./auth/errors";
 import type { UserRole } from "./auth/User";
 import { IApp } from "./contracts";
-import type { IEventRepository } from "./events/InEventRepository";
 import {
   getAuthenticatedUser,
   isAuthenticatedSession,
@@ -20,6 +19,7 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 import type { IEventController } from "./events/IEventController";
+import type { IEventFilterService } from "./events/EventService";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -40,7 +40,7 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
     private readonly eventController: IEventController,
-    private readonly eventRepo: IEventRepository,
+    private readonly eventFilterService: IEventFilterService,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -173,35 +173,6 @@ class ExpressApp implements IApp {
       "/logout",
       asyncHandler(async (req, res) => {
         await this.authController.logoutFromForm(res, sessionStore(req));
-      }),
-    );
-
-    // ── Feature 6: Events list filters (category + timeframe) ────────
-    // Returns JSON for now; UI can be added later.
-
-    this.app.get(
-      "/events",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-
-        const category = typeof req.query.category === "string" ? req.query.category : "";
-        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
-
-        const result = await this.eventRepo.findAll({
-          status: "published",
-          timeframe:
-            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
-              ? timeframe
-              : "upcoming",
-          category: category.trim() ? category.trim() : undefined,
-        });
-
-        const session = recordPageView(sessionStore(req));
-        this.logger.info(`GET /events for ${session.browserLabel}`);
-        res.json({
-          events: result.ok ? result.value : [],
-          filters: { category, timeframe },
-        });
       }),
     );
 
@@ -364,6 +335,35 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Feature 6: event list filters (category + timeframe) ───────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const category = typeof req.query.category === "string" ? req.query.category : "";
+        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
+
+        const eventsResult = await this.eventFilterService.listPublishedUpcoming({
+          category: category.trim() ? category : undefined,
+          timeframe:
+            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
+              ? timeframe
+              : undefined,
+        });
+
+        const session = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${session.browserLabel}`);
+        res.json({
+          events: eventsResult.ok ? eventsResult.value : [],
+          filters: { category, timeframe },
+        });
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -385,8 +385,8 @@ export function CreateApp(
   authController: IAuthController,
   rsvpController: IRsvpController,
   eventController: IEventController,
-  eventRepo: IEventRepository,
+  eventFilterService: IEventFilterService,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, rsvpController, eventController, eventRepo, logger);
+  return new ExpressApp(authController, rsvpController, eventController, eventFilterService, logger);
 }

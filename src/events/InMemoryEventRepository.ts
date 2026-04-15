@@ -8,6 +8,33 @@ import type {
   IEventRepository,
 } from "./InEventRepository";
 
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+}
+
+function weekRange(now: Date): { start: Date; end: Date } {
+  const start = startOfDay(now);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
+function weekendRange(now: Date): { start: Date; end: Date } {
+  const day = now.getDay();
+  const daysUntilSat = day === 6 ? 0 : 6 - day;
+  const sat = new Date(now);
+  sat.setDate(now.getDate() + daysUntilSat);
+  sat.setHours(0, 0, 0, 0);
+  const sun = new Date(sat);
+  sun.setDate(sat.getDate() + 1);
+  sun.setHours(23, 59, 59, 999);
+  return { start: sat, end: sun };
+}
+
 export const DEMO_EVENTS: Event[] = [
   {
     id: "event-published-limited",
@@ -101,22 +128,14 @@ class InMemoryEventRepository implements IEventRepository {
         if (filters.timeframe === "upcoming") {
           results = results.filter((e) => e.startDatetime >= now);
         } else if (filters.timeframe === "this_week") {
-          const weekEnd = new Date(now);
-          weekEnd.setDate(weekEnd.getDate() + 7);
+          const { start, end } = weekRange(now);
           results = results.filter(
-            (e) => e.startDatetime >= now && e.startDatetime <= weekEnd,
+            (e) => e.startDatetime >= now && e.startDatetime >= start && e.startDatetime <= end,
           );
         } else if (filters.timeframe === "this_weekend") {
-          const day = now.getDay();
-          const daysUntilSat = day === 6 ? 0 : 6 - day;
-          const sat = new Date(now);
-          sat.setDate(now.getDate() + daysUntilSat);
-          sat.setHours(0, 0, 0, 0);
-          const sun = new Date(sat);
-          sun.setDate(sat.getDate() + 1);
-          sun.setHours(23, 59, 59, 999);
+          const { start, end } = weekendRange(now);
           results = results.filter(
-            (e) => e.startDatetime >= sat && e.startDatetime <= sun,
+            (e) => e.startDatetime >= now && e.startDatetime >= start && e.startDatetime <= end,
           );
         }
       }

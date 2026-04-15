@@ -1,5 +1,5 @@
 import { Result, Ok, Err } from "../lib/result";
-import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
+import type { IEventRepository, Event, CreateEventData, EventFilters } from "./InEventRepository";
 import type { IEventService, CreateEventInput, EditEventInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
@@ -10,8 +10,6 @@ import {
   InvalidTransitionError,
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
-
-// ── Shared validation (Features 1 & 3) ──────────────────────────────────────
 
 const VALID_CATEGORIES = [
   "social",
@@ -93,8 +91,6 @@ function validateFields(
 
 export { validateFields };
 
-// ── Features 1 & 3 (Avin) — event creation and editing ──────────────────────
-
 export function CreateEventService(repo: IEventRepository): IEventService {
   return {
     async getEventById(id: string) {
@@ -164,7 +160,6 @@ export function CreateEventService(repo: IEventRepository): IEventService {
         return Err(InvalidStateError(`Cannot edit a ${event.status} event.`));
       }
 
-      // Merge candidate values so cross-field validation uses the full picture.
       const candidateStart =
         input.startDatetime !== undefined ? input.startDatetime : event.startDatetime;
       const candidateEnd =
@@ -202,8 +197,6 @@ export function CreateEventService(repo: IEventRepository): IEventService {
     },
   };
 }
-
-// ── Features 5 & 8 (Khang) — event lifecycle transitions ────────────────────
 
 export interface EventTransitionInput {
   eventId: string;
@@ -250,4 +243,46 @@ export class EventService {
 
     return this.eventRepo.update(input.eventId, { status: "cancelled" });
   }
+
+  async getOrganizerDashboard(actingUserId: string, role: string) {
+    const filter = role === "admin" ? {} : { organizerId: actingUserId };
+    const eventsResult = await this.eventRepo.findAll(filter);
+
+    if (!eventsResult.ok) return eventsResult;
+
+    const eventsWithCounts = await Promise.all(
+      eventsResult.value.map(async (event) => {
+        const countResult = await this.rsvpRepo.countGoingByEventId(event.id);
+        return {
+          ...event,
+          attendeeCount: countResult.ok ? countResult.value : 0,
+        };
+      }),
+    );
+
+    return Ok({
+      published: eventsWithCounts.filter((e) => e.status === "published"),
+      draft: eventsWithCounts.filter((e) => e.status === "draft"),
+      archived: eventsWithCounts.filter((e) => e.status === "cancelled" || e.status === "past"),
+    });
+  }
 }
+
+export interface IEventFilterService {
+  listPublishedUpcoming(
+    filters?: Pick<EventFilters, "category" | "timeframe">,
+  ): Promise<Result<Event[], never>>;
+}
+
+export function CreateEventFilterService(repo: IEventRepository): IEventFilterService {
+  return {
+    async listPublishedUpcoming(filters = {}) {
+      return repo.findAll({
+        status: "published",
+        timeframe: "upcoming",
+        ...filters,
+      });
+    },
+  };
+}
+
