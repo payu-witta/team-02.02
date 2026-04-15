@@ -99,7 +99,7 @@ export function CreateEventService(repo: IEventRepository): IEventService {
   return {
     async getEventById(id: string) {
       const result = await repo.findById(id);
-      if (!result.ok) {
+      if (result.ok === false) {
         return Err(EventNotFoundError(result.value.message));
       }
       return Ok(result.value);
@@ -144,7 +144,7 @@ export function CreateEventService(repo: IEventRepository): IEventService {
 
     async editEvent(input: EditEventInput) {
       const findResult = await repo.findById(input.eventId);
-      if (!findResult.ok) {
+      if (findResult.ok === false) {
         return Err(EventNotFoundError(findResult.value.message));
       }
 
@@ -194,7 +194,7 @@ export function CreateEventService(repo: IEventRepository): IEventService {
       if (input.endDatetime !== undefined) changes.endDatetime = input.endDatetime;
 
       const updateResult = await repo.update(input.eventId, changes);
-      if (!updateResult.ok) {
+      if (updateResult.ok === false) {
         return Err(EventNotFoundError(updateResult.value.message));
       }
 
