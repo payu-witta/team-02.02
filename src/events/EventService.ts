@@ -250,4 +250,27 @@ export class EventService {
 
     return this.eventRepo.update(input.eventId, { status: "cancelled" });
   }
+  // Feature 8
+  async getOrganizerDashboard(actingUserId: string, role: string) {
+    const filter = role === "admin" ? {} : { organizerId: actingUserId };
+    const eventsResult = await this.eventRepo.findAll(filter);
+    
+    if (!eventsResult.ok) return eventsResult;
+
+    const eventsWithCounts = await Promise.all(
+      eventsResult.value.map(async (event) => {
+        const countResult = await this.rsvpRepo.countGoingByEventId(event.id);
+        return {
+          ...event,
+          attendeeCount: countResult.ok ? countResult.value : 0
+        };
+      })
+    );
+
+    return Ok({
+      published: eventsWithCounts.filter(e => e.status === "published"),
+      draft: eventsWithCounts.filter(e => e.status === "draft"),
+      archived: eventsWithCounts.filter(e => e.status === "cancelled" || e.status === "past")
+    }); 
+  }
 }
