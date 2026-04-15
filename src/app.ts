@@ -3,12 +3,14 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IRsvpController } from "./rsvp/RsvpController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
 } from "./auth/errors";
 import type { UserRole } from "./auth/User";
 import { IApp } from "./contracts";
+import type { IEventRepository } from "./events/InEventRepository";
 import {
   getAuthenticatedUser,
   isAuthenticatedSession,
@@ -16,8 +18,8 @@ import {
   recordPageView,
   touchAppSession,
 } from "./session/AppSession";
-import type { IEventService } from "./events/EventService";
 import { ILoggingService } from "./service/LoggingService";
+import type { IEventController } from "./events/IEventController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -36,7 +38,9 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
-    private readonly eventService: IEventService,
+    private readonly rsvpController: IRsvpController,
+    private readonly eventController: IEventController,
+    private readonly eventRepo: IEventRepository,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -172,6 +176,35 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Feature 6: Events list filters (category + timeframe) ────────
+    // Returns JSON for now; UI can be added later.
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const category = typeof req.query.category === "string" ? req.query.category : "";
+        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
+
+        const result = await this.eventRepo.findAll({
+          status: "published",
+          timeframe:
+            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
+              ? timeframe
+              : "upcoming",
+          category: category.trim() ? category.trim() : undefined,
+        });
+
+        const session = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${session.browserLabel}`);
+        res.json({
+          events: result.ok ? result.value : [],
+          filters: { category, timeframe },
+        });
+      }),
+    );
+
     // ── Admin routes ─────────────────────────────────────────────────
 
     this.app.get(
@@ -239,6 +272,82 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── RSVP routes ─────────────────────────────────────────────────
+
+    this.app.get(
+      "/events/:eventId/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        await this.rsvpController.handleGetStatus(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/:eventId/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        await this.rsvpController.handleToggle(req, res);
+      }),
+    );
+
+    // ── Event routes (Features 1 & 3) ───────────────────────────────
+
+    this.app.get(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can create events.")) {
+          return;
+        }
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showCreateForm(res, session);
+      }),
+    );
+
+    this.app.post(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can create events.")) {
+          return;
+        }
+        const session = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.createFromForm(res, req.body as Record<string, unknown>, currentUser, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/:id",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showDetail(res, String(req.params.id), session);
+      }),
+    );
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
+          return;
+        }
+        const session = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.showEditForm(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
+          return;
+        }
+        const session = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.editFromForm(res, String(req.params.id), req.body as Record<string, unknown>, currentUser, session);
+      }),
+    );
+
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
 
@@ -252,35 +361,6 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /home for ${browserSession.browserLabel}`);
         res.render("home", { session: browserSession, pageError: null });
-      }),
-    );
-
-    // ── Feature 6: event list filters (category + timeframe) ───────
-
-    this.app.get(
-      "/events",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-
-        const category = typeof req.query.category === "string" ? req.query.category : "";
-        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
-
-        const eventsResult = await this.eventService.listPublishedUpcoming({
-          category: category.trim() ? category : undefined,
-          timeframe:
-            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
-              ? timeframe
-              : undefined,
-        });
-
-        const session = recordPageView(sessionStore(req));
-        this.logger.info(`GET /events for ${session.browserLabel}`);
-        res.json({
-          events: eventsResult.ok ? eventsResult.value : [],
-          filters: { category, timeframe },
-        });
       }),
     );
 
@@ -303,8 +383,10 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
-  eventService: IEventService,
+  rsvpController: IRsvpController,
+  eventController: IEventController,
+  eventRepo: IEventRepository,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, eventService, logger);
+  return new ExpressApp(authController, rsvpController, eventController, eventRepo, logger);
 }

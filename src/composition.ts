@@ -3,10 +3,14 @@ import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
 import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
+import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
+import { CreateEventController } from "./events/EventController";
+import { CreateEventService } from "./events/EventService";
+import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
+import { CreateRsvpController } from "./rsvp/RsvpController";
+import { CreateRsvpService } from "./rsvp/RsvpService";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
-import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
-import { CreateEventService } from "./events/EventService";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 
@@ -20,8 +24,17 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  const eventRepository = CreateInMemoryEventRepository();
-  const eventService = CreateEventService(eventRepository);
+  // Shared event repository
+  const eventRepo = CreateInMemoryEventRepository();
 
-  return CreateApp(authController, eventService, resolvedLogger);
+  // Event wiring (Features 1 & 3)
+  const eventService = CreateEventService(eventRepo);
+  const eventController = CreateEventController(eventService, resolvedLogger);
+
+  // RSVP wiring (Features 4 & 9)
+  const rsvpRepo = CreateInMemoryRsvpRepository();
+  const rsvpService = CreateRsvpService(rsvpRepo, eventRepo, resolvedLogger);
+  const rsvpController = CreateRsvpController(rsvpService, resolvedLogger);
+
+  return CreateApp(authController, rsvpController, eventController, eventRepo, resolvedLogger);
 }
