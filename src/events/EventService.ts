@@ -262,3 +262,10 @@ export class EventService implements IEventService {
     }); 
   }
 }
+
+export function CreateEventService(
+  eventRepo: IEventRepository, 
+  rsvpRepo: IRsvpRepository
+): IEventService {
+  return new EventService(eventRepo, rsvpRepo);
+}

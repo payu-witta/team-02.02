@@ -317,6 +317,39 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event lifecycle transitions (Features 5 & 8) ───────────────────────
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can publish events.")) {
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store)!;
+
+        await this.eventController.publishEvent(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can cancel events.")) {
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store)!;
+
+
+      await this.eventController.cancelEvent(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
 
