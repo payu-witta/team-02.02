@@ -93,43 +93,47 @@ function validateFields(
 
 export { validateFields };
 
-// ── Features 1 & 3 (Avin) — event creation and editing ──────────────────────
+export class EventService implements IEventService {
+  constructor(
+    private eventRepo: IEventRepository,
+    private rsvpRepo: IRsvpRepository,
+  ) {}
 
-export function CreateEventService(repo: IEventRepository): IEventService {
-  return {
-    async getEventById(id: string) {
-      const result = await repo.findById(id);
-      if (result.ok === false) {
-        return Err(EventNotFoundError(result.value.message));
-      }
-      return Ok(result.value);
-    },
+  // --- Methods from Feature 1 & 3 (Avin) ---
 
-    async createEvent(input: CreateEventInput) {
-      if (input.organizerRole !== "staff" && input.organizerRole !== "admin") {
-        return Err(UnauthorizedError("Only organizers and admins can create events."));
-      }
+  async getEventById(id: string): Promise<Result<Event, EventError>> {
+    const result = await this.eventRepo.findById(id);
+    if (result.ok === false) {
+      return Err(EventNotFoundError(result.value.message));
+    }
+    return Ok(result.value);
+  }
 
-      const err = validateFields(
-        {
-          title: input.title,
-          description: input.description,
-          location: input.location,
-          category: input.category,
-          capacity: input.capacity,
-          startDatetime: input.startDatetime,
-          endDatetime: input.endDatetime,
-        },
-        true,
-      );
-      if (err) return Err(err);
+  async createEvent(input: CreateEventInput) {
+    if (input.organizerRole !== "staff" && input.organizerRole !== "admin") {
+      return Err(UnauthorizedError("Only organizers and admins can create events."));
+    }
 
-      if (input.startDatetime <= new Date()) {
-        return Err(InvalidInputError("Start date/time must be in the future."));
-      }
+    const err = validateFields(
+      {
+        title: input.title,
+        description: input.description,
+        location: input.location,
+        category: input.category,
+        capacity: input.capacity,
+        startDatetime: input.startDatetime,
+        endDatetime: input.endDatetime,
+      },
+      true,
+    );
+    if (err) return Err(err);
 
-      const data: CreateEventData = {
-        title: input.title.trim(),
+    if (input.startDatetime <= new Date()) {
+      return Err(InvalidInputError("Start date/time must be in the future."));
+    }
+
+    return this.eventRepo.create({
+      title: input.title.trim(),
         description: input.description.trim(),
         location: input.location.trim(),
         category: input.category,
@@ -137,13 +141,11 @@ export function CreateEventService(repo: IEventRepository): IEventService {
         startDatetime: input.startDatetime,
         endDatetime: input.endDatetime,
         organizerId: input.organizerId,
-      };
-
-      return repo.create(data);
-    },
+    })
+  }
 
     async editEvent(input: EditEventInput) {
-      const findResult = await repo.findById(input.eventId);
+      const findResult = await this.eventRepo.findById(input.eventId);
       if (findResult.ok === false) {
         return Err(EventNotFoundError(findResult.value.message));
       }
@@ -193,24 +195,15 @@ export function CreateEventService(repo: IEventRepository): IEventService {
       if (input.startDatetime !== undefined) changes.startDatetime = input.startDatetime;
       if (input.endDatetime !== undefined) changes.endDatetime = input.endDatetime;
 
-      const updateResult = await repo.update(input.eventId, changes);
+      const updateResult = await this.eventRepo.update(input.eventId, changes);
       if (updateResult.ok === false) {
         return Err(EventNotFoundError(updateResult.value.message));
       }
 
       return Ok(updateResult.value);
-    },
-  };
-}
+    }
 
 // ── Features 5 & 8 (Khang) — event lifecycle transitions ────────────────────
-
-
-export class EventService {
-  constructor(
-    private eventRepo: IEventRepository,
-    private rsvpRepo: IRsvpRepository,
-  ) {}
 
   async publishEvent(input: EventTransitionInput): Promise<Result<Event, EventError>> {
     const eventResult = await this.eventRepo.findById(input.eventId);

@@ -33,10 +33,20 @@ export interface IEventService {
   getEventById(id: string): Promise<Result<Event, EventError>>;
   createEvent(input: CreateEventInput): Promise<Result<Event, EventError>>;
   editEvent(input: EditEventInput): Promise<Result<Event, EventError>>;
+
+  publishEvent(input: EventTransitionInput): Promise<Result<Event, EventError>>;
+  cancelEvent(input: EventTransitionInput): Promise<Result<Event, EventError>>;
+  getOrganizerDashboard(userId: string, role: UserRole): Promise<Result<OrganizerDashboardData, EventError>>;
 }
 
 export interface EventTransitionInput {
   eventId: string;
   actingUserId: string;
-  actingUserRole: string;
+  actingUserRole: UserRole;
+}
+
+export interface OrganizerDashboardData {
+  published: Event[];
+  draft: Event[];
+  archived: Event[];
 }
