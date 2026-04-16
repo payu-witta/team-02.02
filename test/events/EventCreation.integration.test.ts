@@ -64,6 +64,27 @@ describe("Feature 1 — Event Creation: invalid input", () => {
   });
 });
 
+describe("Feature 1 — Event Creation: edge cases", () => {
+  it("omitting capacity creates an unlimited event → 302", async () => {
+    const agent = await loginAs(app, "staff");
+    const { capacity: _omitted, ...bodyWithoutCapacity } = { ...validBody, capacity: undefined };
+
+    const res = await agent.post("/events").type("form").send(bodyWithoutCapacity);
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toMatch(/^\/events\/[a-f0-9-]+$/);
+  });
+
+  it("admin can also create an event → 302", async () => {
+    const agent = await loginAs(app, "admin");
+
+    const res = await agent.post("/events").type("form").send(validBody);
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toMatch(/^\/events\/[a-f0-9-]+$/);
+  });
+});
+
 describe("Feature 1 — Event Creation: unauthorized access", () => {
   it("member (user role) is rejected with 403", async () => {
     const agent = await loginAs(app, "user");
