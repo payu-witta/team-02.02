@@ -42,4 +42,10 @@ export interface IEventController {
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void>;
+
+  showDashboard(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
 }

@@ -177,8 +177,6 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Publish failed for ${eventId}: ${result.value.message}`);
-      // For Sprint 1, we'll redirect back with a status, 
-      // Sprint 2 will handle this with HTMX inline errors
       res.status(status).redirect(`/events/${eventId}`);
       return;
     }
@@ -209,6 +207,9 @@ class EventController implements IEventController {
     this.logger.info(`Event cancelled: ${eventId}`);
     res.redirect(`/events/${eventId}`);
   }
+
+  //Feature 8
+  
 
 }
 
