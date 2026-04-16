@@ -19,6 +19,9 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 import { IEventDetailController } from "./events/EventDetailController";
+import type { IEventController } from "./events/IEventController";
+import type { IEventFilterService } from "./events/EventService";
+
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -38,6 +41,8 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
+    private readonly eventController: IEventController,
+    private readonly eventFilterService: IEventFilterService,
     private readonly eventDetailController: IEventDetailController,
     private readonly logger: ILoggingService,
   ) {
@@ -259,6 +264,123 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event routes (Features 1 & 3) ───────────────────────────────
+
+    this.app.get(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can create events.")) {
+          return;
+        }
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showCreateForm(res, session);
+      }),
+    );
+
+    this.app.post(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can create events.")) {
+          return;
+        }
+        const session = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.createFromForm(res, req.body as Record<string, unknown>, currentUser, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        const query = typeof req.query.query === "string" ? req.query.query : "";
+        this.logger.info('Get /events/search?q=${JSON.stringyify(query)}');
+        await this.eventController.searchEvents(res, query, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/:id",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showDetail(res, String(req.params.id), session);
+      }),
+    );
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
+          return;
+        }
+        const session = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.showEditForm(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
+          return;
+        }
+        const session = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req))!;
+        await this.eventController.editFromForm(res, String(req.params.id), req.body as Record<string, unknown>, currentUser, session);
+      }),
+    );
+
+    // ── Event lifecycle transitions (Features 5 & 8) ───────────────────────
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can publish events.")) {
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store)!;
+
+        await this.eventController.publishEvent(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can cancel events.")) {
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store)!;
+
+
+      await this.eventController.cancelEvent(res, String(req.params.id), currentUser, session);
+      }),
+    );
+
+    this.app.get(
+      "/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Members cannot access the organizer dashboard.")) {
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = recordPageView(store);
+        const currentUser = getAuthenticatedUser(store)!;
+
+        await this.eventController.showDashboard(res, currentUser, session);
+      }),
+    );
+
+
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
     this.app.get(
@@ -282,6 +404,35 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Feature 6: event list filters (category + timeframe) ───────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const category = typeof req.query.category === "string" ? req.query.category : "";
+        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
+
+        const eventsResult = await this.eventFilterService.filterEvents({
+          category: category.trim() ? category : undefined,
+          timeframe:
+            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
+              ? timeframe
+              : undefined,
+        });
+
+        const session = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${session.browserLabel}`);
+        res.json({
+          events: eventsResult.ok ? eventsResult.value : [],
+          filters: { category, timeframe },
+        });
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -302,8 +453,10 @@ class ExpressApp implements IApp {
 export function CreateApp(
   authController: IAuthController,
   rsvpController: IRsvpController,
+  eventController: IEventController,
+  eventFilterService: IEventFilterService,
   eventDetailController: IEventDetailController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, rsvpController, eventDetailController, logger);
+  return new ExpressApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, logger);
 }
