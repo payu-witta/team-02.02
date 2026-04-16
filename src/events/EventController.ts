@@ -216,7 +216,7 @@ class EventController implements IEventController {
   ): Promise<void> {
     const result = await this.service.getOrganizerDashboard(
       currentUser.userId,
-      currentUser.role
+      currentUser.role,
     );
 
     if (result.ok === false) {
@@ -228,12 +228,13 @@ class EventController implements IEventController {
       return;
     }
 
-    res.render("events/dashboard", { 
-      session, 
-      groups: result.value 
+    // result.value contains { published: [], draft: [], archived: [] }
+    res.render("events/dashboard", {
+      session,
+      groups: result.value,
     });
   }
-  
+
   async searchEvents(
     res: Response,
     query: string,
@@ -241,14 +242,12 @@ class EventController implements IEventController {
   ): Promise<void> {
     const result = await this.service.searchEvents({ query });
     if (result.ok === false) {
-    this.logger.warn(`Search events failed: ${result.value.message}`);
-    res.status(500).render("events/search", { session, pageError: result.value.message });
-    return;
+      this.logger.warn(`Search events failed: ${result.value.message}`);
+      res.status(500).render("events/search", { session, pageError: result.value.message });
+      return;
+    }
+    res.render("events/search", { session, events: result.value });
   }
-  res.render("events/search", { session, events: result.value });
-}
-  
-
 }
 
 export function CreateEventController(

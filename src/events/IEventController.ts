@@ -48,7 +48,7 @@ export interface IEventController {
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void>;
-  
+
   searchEvents(
     res: Response,
     query: string,
