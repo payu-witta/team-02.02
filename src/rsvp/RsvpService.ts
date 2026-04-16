@@ -6,6 +6,7 @@ import type { IRsvpRepository, Rsvp } from "./InRsvpRepository";
 import {
   EventNotFoundError,
   InvalidStateError,
+  PromotionFailedError,
   UnauthorizedError,
   type RsvpError,
 } from "./errors";
@@ -53,26 +54,44 @@ class RsvpService implements IRsvpService {
       (existing.status === "going" || existing.status === "waitlisted");
 
     if (isActive) {
+      const shouldPromote = existing!.status === "going";
+      const firstWaitlisted = shouldPromote
+        ? (await this.rsvpRepo.findByEventId(eventId)).value.find((r) => r.status === "waitlisted")
+        : undefined;
+
       const cancelled = await this.rsvpRepo.upsert({ eventId, userId, status: "cancelled" });
       this.logger.info(`User ${userId} cancelled RSVP for event ${eventId}`);
 
-      // Feature 9: freeing a "going" seat atomically promotes the earliest waitlisted member.
-      if (existing!.status === "going") {
-        const allResult = await this.rsvpRepo.findByEventId(eventId);
-        const firstWaitlisted = allResult.value.find((r) => r.status === "waitlisted");
-        if (firstWaitlisted) {
-          await this.rsvpRepo.upsert({
-            eventId: firstWaitlisted.eventId,
-            userId: firstWaitlisted.userId,
-            status: "going",
-          });
-          this.logger.info(
-            `Promoted user ${firstWaitlisted.userId} from waitlist for event ${eventId}`,
-          );
-        }
+      if (!shouldPromote || firstWaitlisted === undefined) {
+        return Ok(cancelled.value);
       }
 
-      return Ok(cancelled.value);
+      try {
+        await this.rsvpRepo.upsert({
+          eventId: firstWaitlisted.eventId,
+          userId: firstWaitlisted.userId,
+          status: "going",
+        });
+        this.logger.info(`Promoted user ${firstWaitlisted.userId} from waitlist for event ${eventId}`);
+        return Ok(cancelled.value);
+      } catch (error) {
+        this.logger.error(
+          `Promotion failed for event ${eventId}; restoring cancelled RSVP for user ${userId}: ${this.formatUnknownError(error)}`,
+        );
+        try {
+          await this.rsvpRepo.upsert({ eventId, userId, status: "going" });
+        } catch (rollbackError) {
+          this.logger.error(
+            `Rollback failed for event ${eventId}, user ${userId}: ${this.formatUnknownError(rollbackError)}`,
+          );
+        }
+
+        return Err(
+          PromotionFailedError(
+            `Failed to promote waitlisted RSVP for event ${eventId}; cancellation was not finalized.`,
+          ),
+        );
+      }
     }
 
     let targetStatus: Rsvp["status"] = "going";
@@ -113,6 +132,13 @@ class RsvpService implements IRsvpService {
     const waitlisted = allResult.value.filter((r) => r.status === "waitlisted");
     const index = waitlisted.findIndex((r) => r.userId === userId);
     return Ok(index === -1 ? null : index + 1);
+  }
+
+  private formatUnknownError(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return String(error);
   }
 }
 
