@@ -24,6 +24,46 @@ describe("Feature 1 — Event Creation: happy path", () => {
   });
 });
 
+describe("Feature 1 — Event Creation: invalid input", () => {
+  let agent: Awaited<ReturnType<typeof loginAs>>;
+
+  beforeAll(async () => {
+    agent = await loginAs(app, "staff");
+  });
+
+  it.each([
+    ["blank title",       { ...validBody, title: "" }],
+    ["blank description", { ...validBody, description: "" }],
+    ["blank location",    { ...validBody, location: "" }],
+    ["invalid category",  { ...validBody, category: "invalid" }],
+    ["capacity of zero",  { ...validBody, capacity: "0" }],
+    ["negative capacity", { ...validBody, capacity: "-5" }],
+  ])("%s → 400", async (_label, body) => {
+    const res = await agent.post("/events").type("form").send(body);
+    expect(res.status).toBe(400);
+  });
+
+  it("start datetime in the past → 400", async () => {
+    const body = {
+      ...validBody,
+      startDatetime: new Date(Date.now() - 86_400_000).toISOString().slice(0, 16),
+      endDatetime:   new Date(Date.now() + 86_400_000).toISOString().slice(0, 16),
+    };
+    const res = await agent.post("/events").type("form").send(body);
+    expect(res.status).toBe(400);
+  });
+
+  it("end datetime before start datetime → 400", async () => {
+    const body = {
+      ...validBody,
+      startDatetime: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 16),
+      endDatetime:   new Date(Date.now() + 86_400_000).toISOString().slice(0, 16),
+    };
+    const res = await agent.post("/events").type("form").send(body);
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("Feature 1 — Event Creation: unauthorized access", () => {
   it("member (user role) is rejected with 403", async () => {
     const agent = await loginAs(app, "user");
