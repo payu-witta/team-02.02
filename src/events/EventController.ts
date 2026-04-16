@@ -209,6 +209,31 @@ class EventController implements IEventController {
   }
 
   //Feature 8
+  async showDashboard(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.getOrganizerDashboard(
+      currentUser.userId,
+      currentUser.role
+    );
+
+    if (result.ok === false) {
+      this.logger.warn(`Dashboard load failed: ${result.value.message}`);
+      res.status(500).render("partials/error", {
+        message: "Could not load dashboard data.",
+        layout: false,
+      });
+      return;
+    }
+
+    // result.value contains { published: [], draft: [], archived: [] }
+    res.render("events/dashboard", { 
+      session, 
+      groups: result.value 
+    });
+  }
   
 
 }
