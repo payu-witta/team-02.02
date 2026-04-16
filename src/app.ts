@@ -292,7 +292,7 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const session = recordPageView(sessionStore(req));
         const query = typeof req.query.query === "string" ? req.query.query : "";
-        this.logger.info('Get /events/search?q=${JSON.stringyify(query)}');
+        this.logger.info(`Get /events/search?q=${JSON.stringify(query)}`);
         await this.eventController.searchEvents(res, query, session);
       }),
     );

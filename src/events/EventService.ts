@@ -255,7 +255,7 @@ export class EventService implements IEventService {
     const filter = role === "admin" ? {} : { organizerId: actingUserId };
     const eventsResult = await this.eventRepo.findAll(filter);
     
-    if (!eventsResult.ok) return Err(InvalidStateError("Failed to fetch events"));
+    if (!eventsResult.ok) return Err(InvalidStateError(`Failed to fetch events: ${eventsResult.value}`));
 
     const eventsWithCounts = await Promise.all(
       eventsResult.value.map(async (event) => {
