@@ -1,0 +1,42 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-1">Search Events</h1>
+  <p class="text-slate-500">Browse published upcoming events by keyword.</p>
+</section>
+
+<% if (typeof pageError === "string" && pageError.length > 0) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<section class="max-w-4xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form method="get" action="/events/search" class="mb-6 flex items-center gap-3">
+    <input
+      type="text"
+      name="query"
+      value="<%= typeof query === 'string' ? query : '' %>"
+      placeholder="Search title, description, or location"
+      class="flex-1 px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+    />
+    <button
+      type="submit"
+      class="px-4 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700"
+    >
+      Search
+    </button>
+  </form>
+
+  <% if (Array.isArray(events) && events.length > 0) { %>
+    <ul class="space-y-3">
+      <% events.forEach((event) => { %>
+        <li class="p-4 border border-slate-200 rounded-xl">
+          <a href="/events/<%= event.id %>" class="text-lg font-semibold text-slate-900 no-underline hover:text-blue-700">
+            <%= event.title %>
+          </a>
+          <p class="text-sm text-slate-500 mt-1"><%= event.location %> • <%= event.startDatetime.toLocaleString() %></p>
+          <p class="text-sm text-slate-700 mt-2"><%= event.description %></p>
+        </li>
+      <% }) %>
+    </ul>
+  <% } else if (!pageError) { %>
+    <p class="text-slate-500">No matching events found.</p>
+  <% } %>
+</section>

@@ -228,7 +228,6 @@ class EventController implements IEventController {
       return;
     }
 
-    // result.value contains { published: [], draft: [], archived: [] }
     res.render("events/dashboard", { 
       session, 
       groups: result.value 

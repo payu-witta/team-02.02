@@ -54,6 +54,4 @@ export interface IEventController {
     query: string,
     session: IAppBrowserSession,
   ): Promise<void>;
-    session: IAppBrowserSession,
-  ): Promise<void>;
 }

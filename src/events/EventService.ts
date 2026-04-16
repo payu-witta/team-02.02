@@ -1,6 +1,6 @@
 import { Result, Ok, Err } from "../lib/result";
 import type { IEventRepository, Event, CreateEventData , EventFilters} from "./InEventRepository";
-import type { IEventService, CreateEventInput, EditEventInput, EventTransitionInput, OrganizerDashboardData } from "./IEventService";
+import type { IEventService, CreateEventInput, EditEventInput, EventTransitionInput, OrganizerDashboardData, SearchEventsInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
   EventNotFoundError,
@@ -199,20 +199,21 @@ export class EventService implements IEventService {
       }
 
       return Ok(updateResult.value);
-    },
+    }
+  
 
     // Feature 10 - Event Search (Sprint 1)
-    async searchEvents(input: SearchEventsInput) {
+    async searchEvents(input: SearchEventsInput) {      
       const query = input.query.trim();
       const filters = {
         status: "published" as const,
         timeframe: "upcoming" as const,
         ...(query.length > 0 ? { search: query } : {}),
       };
-      return repo.findAll(filters);
-    },
-  };
-}
+      return this.eventRepo.findAll(filters);
+    }
+  
+
 
 
   async publishEvent(input: EventTransitionInput): Promise<Result<Event, EventError>> {
@@ -254,7 +255,7 @@ export class EventService implements IEventService {
     const filter = role === "admin" ? {} : { organizerId: actingUserId };
     const eventsResult = await this.eventRepo.findAll(filter);
     
-    if (!eventsResult.ok) return Err({ name: "InvalidStateError", message: "Failed to fetch events" });;
+    if (!eventsResult.ok) return Err(InvalidStateError(`Failed to fetch events: ${eventsResult.value}`));
 
     const eventsWithCounts = await Promise.all(
       eventsResult.value.map(async (event) => {
