@@ -1,5 +1,5 @@
 import { Result, Ok, Err } from "../lib/result";
-import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
+import type { IEventRepository, Event, CreateEventData , EventFilters} from "./InEventRepository";
 import type { IEventService, CreateEventInput, EditEventInput, EventTransitionInput, OrganizerDashboardData } from "./IEventService";
 import type { EventError } from "./errors";
 import {
@@ -11,8 +11,6 @@ import {
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
 import { UserRole } from "../auth/User";
-
-// ── Shared validation (Features 1 & 3) ──────────────────────────────────────
 
 const VALID_CATEGORIES = [
   "social",
@@ -167,7 +165,6 @@ export class EventService implements IEventService {
         return Err(InvalidStateError(`Cannot edit a ${event.status} event.`));
       }
 
-      // Merge candidate values so cross-field validation uses the full picture.
       const candidateStart =
         input.startDatetime !== undefined ? input.startDatetime : event.startDatetime;
       const candidateEnd =
@@ -202,9 +199,21 @@ export class EventService implements IEventService {
       }
 
       return Ok(updateResult.value);
-    }
+    },
 
-// ── Features 5 & 8 (Khang) — event lifecycle transitions ────────────────────
+    // Feature 10 - Event Search (Sprint 1)
+    async searchEvents(input: SearchEventsInput) {
+      const query = input.query.trim();
+      const filters = {
+        status: "published" as const,
+        timeframe: "upcoming" as const,
+        ...(query.length > 0 ? { search: query } : {}),
+      };
+      return repo.findAll(filters);
+    },
+  };
+}
+
 
   async publishEvent(input: EventTransitionInput): Promise<Result<Event, EventError>> {
     const eventResult = await this.eventRepo.findById(input.eventId);
@@ -239,6 +248,7 @@ export class EventService implements IEventService {
 
     return this.eventRepo.update(input.eventId, { status: "cancelled" });
   }
+
   // Feature 8
   async getOrganizerDashboard(actingUserId: string, role: UserRole): Promise<Result<OrganizerDashboardData, EventError>> {
     const filter = role === "admin" ? {} : { organizerId: actingUserId };
@@ -270,4 +280,26 @@ export function CreateEventService(
   rsvpRepo: IRsvpRepository
 ): IEventService {
   return new EventService(eventRepo, rsvpRepo);
+}
+
+export interface FilterEventsInput {
+  category?: string;
+  timeframe?: "upcoming" | "this_week" |"this_weekend";
+}
+
+export interface IEventFilterService {
+  filterEvents(input: FilterEventsInput): Promise<Result<Event[], EventError>>;
+}
+
+export function CreateEventFilterService(repo: IEventRepository): IEventFilterService {
+  return {
+    async filterEvents(input: FilterEventsInput) {
+      const filters: EventFilters = {
+        status: "published" as const,
+        ...(input.category ? { category: input.category } : {}),
+        ...(input.timeframe ? { timeframe: input.timeframe } : {}),
+      };
+      return repo.findAll(filters);
+    },
+  };
 }

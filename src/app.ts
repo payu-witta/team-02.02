@@ -19,6 +19,7 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 import type { IEventController } from "./events/IEventController";
+import type { IEventFilterService } from "./events/EventService";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -39,6 +40,7 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
     private readonly eventController: IEventController,
+    private readonly eventFilterService: IEventFilterService,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -285,6 +287,17 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        const query = typeof req.query.query === "string" ? req.query.query : "";
+        this.logger.info('Get /events/search?q=${JSON.stringyify(query)}');
+        await this.eventController.searchEvents(res, query, session);
+      }),
+    );
+
+    this.app.get(
       "/events/:id",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -381,6 +394,35 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Feature 6: event list filters (category + timeframe) ───────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const category = typeof req.query.category === "string" ? req.query.category : "";
+        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
+
+        const eventsResult = await this.eventFilterService.filterEvents({
+          category: category.trim() ? category : undefined,
+          timeframe:
+            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
+              ? timeframe
+              : undefined,
+        });
+
+        const session = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${session.browserLabel}`);
+        res.json({
+          events: eventsResult.ok ? eventsResult.value : [],
+          filters: { category, timeframe },
+        });
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -402,7 +444,8 @@ export function CreateApp(
   authController: IAuthController,
   rsvpController: IRsvpController,
   eventController: IEventController,
+  eventFilterService: IEventFilterService,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, rsvpController, eventController, logger);
+  return new ExpressApp(authController, rsvpController, eventController, eventFilterService, logger);
 }
