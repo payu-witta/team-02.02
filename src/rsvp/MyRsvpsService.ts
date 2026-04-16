@@ -1,0 +1,62 @@
+import { Ok, type Result } from "../lib/result";
+import type { UserRole } from "../auth/User";
+import type { Event, IEventRepository } from "../events/InEventRepository";
+import type { Rsvp, IRsvpRepository } from "./InRsvpRepository";
+
+export type MyRsvpItem = {
+  event: Event;
+  rsvp: Rsvp;
+};
+
+export type MyRsvpsView = {
+  upcoming: MyRsvpItem[];
+  history: MyRsvpItem[];
+};
+
+export interface IMyRsvpsService {
+  getMyRsvps(input: {
+    userId: string;
+    userRole: UserRole;
+  }): Promise<Result<MyRsvpsView, never>>;
+}
+
+class MyRsvpsService implements IMyRsvpsService {
+  constructor(
+    private readonly rsvpRepo: IRsvpRepository,
+    private readonly eventRepo: IEventRepository,
+  ) {}
+
+  async getMyRsvps(input: {
+    userId: string;
+    userRole: UserRole;
+  }): Promise<Result<MyRsvpsView, never>> {
+    const rsvpResult = await this.rsvpRepo.findByUserId(input.userId);
+    const rsvps = rsvpResult.ok ? rsvpResult.value : [];
+
+    const upcoming: MyRsvpItem[] = [];
+    const history: MyRsvpItem[] = [];
+
+    for (const rsvp of rsvps) {
+      const eventResult = await this.eventRepo.findById(rsvp.eventId);
+      if (!eventResult.ok) continue;
+
+      const event = eventResult.value;
+      const item = { event, rsvp };
+
+      if (event.status === "cancelled" || event.status === "past") {
+        history.push(item);
+      } else {
+        upcoming.push(item);
+      }
+    }
+
+    return Ok({ upcoming, history });
+  }
+}
+
+export function CreateMyRsvpsService(
+  rsvpRepo: IRsvpRepository,
+  eventRepo: IEventRepository,
+): IMyRsvpsService {
+  return new MyRsvpsService(rsvpRepo, eventRepo);
+}
