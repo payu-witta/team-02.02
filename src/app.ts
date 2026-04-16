@@ -286,6 +286,18 @@ class ExpressApp implements IApp {
       }),
     );
 
+    //Feature 10 - Event Search (Sprint 1)
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = recordPageView(sessionStore(req));
+        const query = typeof req.query.query === "string" ? req.query.query : "";
+        this.logger.info(`Get /events/search?q=${JSON.stringify(query)}`);
+        await this.eventController.searchEvents(res, query, session);
+      }),
+    );
+
     this.app.get(
       "/events/search",
       asyncHandler(async (req, res) => {
