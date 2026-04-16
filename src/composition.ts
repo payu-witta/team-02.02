@@ -25,14 +25,18 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
+  // Shared event repository
+  const eventRepo = CreateInMemoryEventRepository();
+  const rsvpRepo = CreateInMemoryRsvpRepository();
+
+  // Event wiring (Features 1 & 3)
   const eventRepository = CreateInMemoryEventRepository();
-  const eventService = CreateEventService(eventRepository);
+  const eventService = CreateEventService(eventRepo, rsvpRepo);
   const eventController = CreateEventController(eventService, resolvedLogger);
 
   const eventFilterService = CreateEventFilterService(eventRepository);
-
-  const rsvpRepo = CreateInMemoryRsvpRepository();
-  const rsvpService = CreateRsvpService(rsvpRepo, eventRepository, resolvedLogger);
+  // RSVP wiring (Features 4 & 9)
+  const rsvpService = CreateRsvpService(rsvpRepo, eventRepo, resolvedLogger);
   const rsvpController = CreateRsvpController(rsvpService, resolvedLogger);
 
   return CreateApp(authController, rsvpController, eventController, eventFilterService, resolvedLogger);

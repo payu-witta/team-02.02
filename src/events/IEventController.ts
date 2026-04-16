@@ -29,10 +29,31 @@ export interface IEventController {
     session: IAppBrowserSession,
   ): Promise<void>;
 
-  //Feature 10 - Event Search (Sprint 1)
+  publishEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  cancelEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  showDashboard(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+  
   searchEvents(
     res: Response,
     query: string,
+    session: IAppBrowserSession,
+  ): Promise<void>;
     session: IAppBrowserSession,
   ): Promise<void>;
 }
