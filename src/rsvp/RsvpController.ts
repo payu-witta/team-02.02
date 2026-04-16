@@ -20,6 +20,7 @@ class RsvpController implements IRsvpController {
     if (name === "EventNotFoundError") return 404;
     if (name === "InvalidStateError") return 409;
     if (name === "UnauthorizedError") return 403;
+    if (name === "PromotionFailedError") return 500;
     return 500;
   }
 

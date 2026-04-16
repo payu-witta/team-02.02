@@ -1,7 +1,8 @@
 export type RsvpError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "InvalidStateError"; message: string }
-  | { name: "UnauthorizedError"; message: string };
+  | { name: "UnauthorizedError"; message: string }
+  | { name: "PromotionFailedError"; message: string };
 
 export const EventNotFoundError = (message: string): RsvpError => ({
   name: "EventNotFoundError",
@@ -15,5 +16,10 @@ export const InvalidStateError = (message: string): RsvpError => ({
 
 export const UnauthorizedError = (message: string): RsvpError => ({
   name: "UnauthorizedError",
+  message,
+});
+
+export const PromotionFailedError = (message: string): RsvpError => ({
+  name: "PromotionFailedError",
   message,
 });
