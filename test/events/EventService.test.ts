@@ -1,4 +1,5 @@
-import { EventService, EventTransitionInput } from "../../src/events/EventService"; // adjust path
+import { EventService } from "../../src/events/EventService";
+import {EventTransitionInput} from "../../src/events/IEventService";
 import { IEventRepository } from "../../src/events/InEventRepository";
 import { IRsvpRepository } from "../../src/rsvp/InRsvpRepository";
 import { Ok, Err } from "../../src/lib/result";
@@ -78,7 +79,7 @@ describe("EventService - Transitions", () => {
 
   describe("cancelEvent", () => {
     it("should allow an admin to cancel even if they aren't the organizer", async () => {
-      const adminInput = { eventId: "evt-123", actingUserId: "admin-1", actingUserRole: "admin" };
+      const adminInput: EventTransitionInput = { eventId: "evt-123", actingUserId: "admin-1", actingUserRole: "admin" };
       
       mockEventRepo.findById.mockResolvedValue(Ok({
         id: "evt-123",
@@ -105,7 +106,7 @@ describe("EventService - Transitions", () => {
         eventId: "evt-123",
         actingUserId: "user-1",
         actingUserRole: "user"
-      });
+      } as EventTransitionInput);
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -144,7 +145,7 @@ describe("EventService - Transitions", () => {
     it("should apply an organizerId filter for regular users", async () => {
       mockEventRepo.findAll.mockResolvedValue(Ok([]));
       
-      await service.getOrganizerDashboard("user-1", "organizer");
+      await service.getOrganizerDashboard("user-1", "staff");
 
       expect(mockEventRepo.findAll).toHaveBeenCalledWith({ organizerId: "user-1" });
     });
@@ -156,7 +157,7 @@ describe("EventService - Transitions", () => {
     
       mockRsvpRepo.countGoingByEventId.mockResolvedValue(Err({ name: "RsvpError", message: "DB down" }) as any);
 
-      const result = await service.getOrganizerDashboard("user-1", "organizer");
+      const result = await service.getOrganizerDashboard("user-1", "staff");
 
       if (!result.ok) throw new Error("Expected Ok result");
 
@@ -164,15 +165,18 @@ describe("EventService - Transitions", () => {
     });
 
     it("should return an error if fetching events fails", async () => {
-      mockEventRepo.findAll.mockResolvedValue(Err({ name: "DbError", message: "Connection failed" }) as any);
+  mockEventRepo.findAll.mockResolvedValue(Err({ 
+    name: "RepositoryError", 
+    message: "Connection failed" 
+  }) as any);
 
-      const result = await service.getOrganizerDashboard("user-1", "organizer");
+  const result = await service.getOrganizerDashboard("user-1", "staff");
 
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect((result.value as any).name).toBe("DbError");
-      }
-    });
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.value.name).toBe("InvalidStateError");
+    expect(result.value.message).toContain("Failed to fetch events");
+  }
+});
   });
-
 });

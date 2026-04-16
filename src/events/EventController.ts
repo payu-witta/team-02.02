@@ -161,22 +161,80 @@ class EventController implements IEventController {
     res.redirect(`/events/${result.value.id}`);
   }
 
-  // Feature 6 - Category and Date Filter (Sprint 1)
-  async filterEvents(
+  // Feature 5
+  async publishEvent(
     res: Response,
-    category: string,
-    date: string,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void> {
-    const result = await this.service.filterEvents({ category, date });
+    const result = await this.service.publishEvent({
+      eventId,
+      actingUserId: currentUser.userId,
+      actingUserRole: currentUser.role,
+    });
+
     if (result.ok === false) {
-      res.status(500).render("partials/error", { message: result.value.message, layout: false });
+      const status = mapErrorStatus(result.value);
+      this.logger.warn(`Publish failed for ${eventId}: ${result.value.message}`);
+      res.status(status).redirect(`/events/${eventId}`);
       return;
-  }
-  res.render("events/list", { session, events: result.value });
+    }
+
+    this.logger.info(`Event published: ${eventId}`);
+    res.redirect(`/events/${eventId}`);
   }
 
-  // Feature 10 - Event Search (Sprint 1)
+  async cancelEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.cancelEvent({
+      eventId,
+      actingUserId: currentUser.userId,
+      actingUserRole: currentUser.role,
+    });
+
+    if (result.ok === false) {
+      const status = mapErrorStatus(result.value);
+      this.logger.warn(`Cancellation failed for ${eventId}: ${result.value.message}`);
+      res.status(status).redirect(`/events/${eventId}`);
+      return;
+    }
+
+    this.logger.info(`Event cancelled: ${eventId}`);
+    res.redirect(`/events/${eventId}`);
+  }
+
+  //Feature 8
+  async showDashboard(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.getOrganizerDashboard(
+      currentUser.userId,
+      currentUser.role,
+    );
+
+    if (result.ok === false) {
+      this.logger.warn(`Dashboard load failed: ${result.value.message}`);
+      res.status(500).render("partials/error", {
+        message: "Could not load dashboard data.",
+        layout: false,
+      });
+      return;
+    }
+
+    // result.value contains { published: [], draft: [], archived: [] }
+    res.render("events/dashboard", {
+      session,
+      groups: result.value,
+    });
+  }
+
   async searchEvents(
     res: Response,
     query: string,
@@ -185,14 +243,11 @@ class EventController implements IEventController {
     const result = await this.service.searchEvents({ query });
     if (result.ok === false) {
       this.logger.warn(`Search events failed: ${result.value.message}`);
-      res.status(500).render("partials/error", {
-        message: result.value.message,
-        layout: false,
-      });
+      res.status(500).render("events/search", { session, pageError: result.value.message });
       return;
     }
     res.render("events/search", { session, events: result.value });
-    }
+  }
 }
 
 export function CreateEventController(

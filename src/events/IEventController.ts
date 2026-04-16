@@ -28,14 +28,27 @@ export interface IEventController {
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void>;
-  // Feature 6 - Category and Date Filter (Sprint 1)
-  filterEvents(
+
+  publishEvent(
     res: Response,
-    category: string,
-    date: string,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void>;
-  // Feature 10 - Event Search (Sprint 1)
+
+  cancelEvent(
+    res: Response,
+    eventId: string,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  showDashboard(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
   searchEvents(
     res: Response,
     query: string,
