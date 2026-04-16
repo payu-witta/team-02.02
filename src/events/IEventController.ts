@@ -28,4 +28,11 @@ export interface IEventController {
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
   ): Promise<void>;
+
+  //Feature 10 - Event Search (Sprint 1)
+  searchEvents(
+    res: Response,
+    query: string,
+    session: IAppBrowserSession,
+  ): Promise<void>;
 }

@@ -1,6 +1,6 @@
 import { Result, Ok, Err } from "../lib/result";
-import type { IEventRepository, Event, CreateEventData } from "./InEventRepository";
-import type { IEventService, CreateEventInput, EditEventInput } from "./IEventService";
+import type { IEventRepository, Event, CreateEventData, EventFilters } from "./InEventRepository";
+import type { IEventService, CreateEventInput, EditEventInput, SearchEventsInput } from "./IEventService";
 import type { EventError } from "./errors";
 import {
   EventNotFoundError,
@@ -10,8 +10,6 @@ import {
   InvalidTransitionError,
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
-
-// ── Shared validation (Features 1 & 3) ──────────────────────────────────────
 
 const VALID_CATEGORIES = [
   "social",
@@ -93,8 +91,6 @@ function validateFields(
 
 export { validateFields };
 
-// ── Features 1 & 3 (Avin) — event creation and editing ──────────────────────
-
 export function CreateEventService(repo: IEventRepository): IEventService {
   return {
     async getEventById(id: string) {
@@ -164,7 +160,6 @@ export function CreateEventService(repo: IEventRepository): IEventService {
         return Err(InvalidStateError(`Cannot edit a ${event.status} event.`));
       }
 
-      // Merge candidate values so cross-field validation uses the full picture.
       const candidateStart =
         input.startDatetime !== undefined ? input.startDatetime : event.startDatetime;
       const candidateEnd =
@@ -200,10 +195,20 @@ export function CreateEventService(repo: IEventRepository): IEventService {
 
       return Ok(updateResult.value);
     },
+
+    // Feature 10 - Event Search (Sprint 1)
+    async searchEvents(input: SearchEventsInput) {
+      const query = input.query.trim();
+      const filters = {
+        status: "published" as const,
+        timeframe: "upcoming" as const,
+        ...(query.length > 0 ? { search: query } : {}),
+      };
+      return repo.findAll(filters);
+    },
   };
 }
 
-// ── Features 5 & 8 (Khang) — event lifecycle transitions ────────────────────
 
 export interface EventTransitionInput {
   eventId: string;
@@ -250,6 +255,7 @@ export class EventService {
 
     return this.eventRepo.update(input.eventId, { status: "cancelled" });
   }
+
   // Feature 8
   async getOrganizerDashboard(actingUserId: string, role: string) {
     const filter = role === "admin" ? {} : { organizerId: actingUserId };
@@ -274,3 +280,26 @@ export class EventService {
     }); 
   }
 }
+
+export interface FilterEventsInput {
+  category?: string;
+  timeframe?: "upcoming" | "this_week" |"this_weekend";
+}
+
+export interface IEventFilterService {
+  filterEvents(input: FilterEventsInput): Promise<Result<Event[], EventError>>;
+}
+
+export function CreateEventFilterService(repo: IEventRepository): IEventFilterService {
+  return {
+    async filterEvents(input: FilterEventsInput) {
+      const filters: EventFilters = {
+        status: "published" as const,
+        ...(input.category ? { category: input.category } : {}),
+        ...(input.timeframe ? { timeframe: input.timeframe } : {}),
+      };
+      return repo.findAll(filters);
+    },
+  };
+}
+

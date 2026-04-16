@@ -160,6 +160,21 @@ class EventController implements IEventController {
     this.logger.info(`Event updated: ${result.value.id}`);
     res.redirect(`/events/${result.value.id}`);
   }
+
+async searchEvents(
+  res: Response,
+  query: string,
+  session: IAppBrowserSession,
+): Promise<void> {
+  const result = await this.service.searchEvents({ query });
+  if (result.ok === false) {
+    this.logger.warn(`Search events failed: ${result.value.message}`);
+    res.status(500).render("events/search", { session, pageError: result.value.message });
+    return;
+  }
+  res.render("events/search", { session, events: result.value });
+}
+
 }
 
 export function CreateEventController(
