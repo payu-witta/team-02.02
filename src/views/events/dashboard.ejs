@@ -1,0 +1,54 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-1">Organizer Dashboard</h1>
+  <p class="text-slate-500">Track events by status and attendee counts.</p>
+</section>
+
+<div class="grid gap-5 md:grid-cols-3">
+  <section class="p-5 border border-slate-200 rounded-2xl bg-white shadow-lg">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">Published</h2>
+    <% if (groups.published.length === 0) { %>
+      <p class="text-sm text-slate-500">No published events.</p>
+    <% } else { %>
+      <ul class="space-y-2">
+        <% groups.published.forEach((event) => { %>
+          <li class="text-sm">
+            <a href="/events/<%= event.id %>" class="font-medium text-slate-900 no-underline hover:text-blue-700"><%= event.title %></a>
+            <div class="text-slate-500">Attendees: <%= event.attendeeCount %></div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="p-5 border border-slate-200 rounded-2xl bg-white shadow-lg">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">Draft</h2>
+    <% if (groups.draft.length === 0) { %>
+      <p class="text-sm text-slate-500">No draft events.</p>
+    <% } else { %>
+      <ul class="space-y-2">
+        <% groups.draft.forEach((event) => { %>
+          <li class="text-sm">
+            <a href="/events/<%= event.id %>" class="font-medium text-slate-900 no-underline hover:text-blue-700"><%= event.title %></a>
+            <div class="text-slate-500">Attendees: <%= event.attendeeCount %></div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="p-5 border border-slate-200 rounded-2xl bg-white shadow-lg">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">Archived</h2>
+    <% if (groups.archived.length === 0) { %>
+      <p class="text-sm text-slate-500">No archived events.</p>
+    <% } else { %>
+      <ul class="space-y-2">
+        <% groups.archived.forEach((event) => { %>
+          <li class="text-sm">
+            <a href="/events/<%= event.id %>" class="font-medium text-slate-900 no-underline hover:text-blue-700"><%= event.title %></a>
+            <div class="text-slate-500">Attendees: <%= event.attendeeCount %></div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
