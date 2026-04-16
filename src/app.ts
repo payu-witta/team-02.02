@@ -349,6 +349,21 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Members cannot access the organizer dashboard.")) {
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = recordPageView(store);
+        const currentUser = getAuthenticatedUser(store)!;
+
+        await this.eventController.showDashboard(res, currentUser, session);
+      }),
+    );
+
 
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
