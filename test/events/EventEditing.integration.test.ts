@@ -32,6 +32,22 @@ describe("Feature 3 — Event Editing: not found", () => {
   });
 });
 
+describe("Feature 3 — Event Editing: invalid state", () => {
+  it("editing a cancelled event → 409", async () => {
+    const agent = await loginAs(app, "staff");
+    const eventId = await seedEvent(app, agent);
+
+    await agent.post(`/events/${eventId}/cancel`).expect(302);
+
+    const res = await agent
+      .post(`/events/${eventId}/edit`)
+      .type("form")
+      .send({ ...BASE_EVENT, title: "Edit After Cancel" });
+
+    expect(res.status).toBe(409);
+  });
+});
+
 describe("Feature 3 — Event Editing: unauthorized", () => {
   it("member (user role) is rejected with 403", async () => {
     const staffAgent = await loginAs(app, "staff");
