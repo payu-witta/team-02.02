@@ -4,6 +4,7 @@ import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
 import { IRsvpController } from "./rsvp/RsvpController";
+import { IMyRsvpsController } from "./rsvp/MyRsvpsController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -39,6 +40,7 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
     private readonly eventDetailController: IEventDetailController,
+    private readonly myRsvpsController: IMyRsvpsController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -140,6 +142,13 @@ class ExpressApp implements IApp {
         this.logger.info("GET /");
         const store = sessionStore(req);
         res.redirect(isAuthenticatedSession(store) ? "/home" : "/login");
+      }),
+    );
+    this.app.get(
+      "/my-rsvps",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        await this.myRsvpsController.showMyRsvps(req, res);
       }),
     );
 
@@ -300,10 +309,17 @@ class ExpressApp implements IApp {
 }
 
 export function CreateApp(
-  authController: IAuthController,
-  rsvpController: IRsvpController,
-  eventDetailController: IEventDetailController,
-  logger: ILoggingService,
-): IApp {
-  return new ExpressApp(authController, rsvpController, eventDetailController, logger);
+    authController: IAuthController,
+    rsvpController: IRsvpController,
+    eventDetailController: IEventDetailController,
+    myRsvpsController: IMyRsvpsController,
+    logger: ILoggingService,
+  ): IApp {
+  return new ExpressApp(
+    authController,
+    rsvpController,
+    eventDetailController,
+    myRsvpsController,
+    logger,
+  );
 }
