@@ -1,3 +1,4 @@
+import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { loginAs } from "../helpers/authSession";
 
@@ -20,5 +21,21 @@ describe("Feature 1 — Event Creation: happy path", () => {
 
     expect(res.status).toBe(302);
     expect(res.headers.location).toMatch(/^\/events\/[a-f0-9-]+$/);
+  });
+});
+
+describe("Feature 1 — Event Creation: unauthorized access", () => {
+  it("member (user role) is rejected with 403", async () => {
+    const agent = await loginAs(app, "user");
+
+    const res = await agent.post("/events").type("form").send(validBody);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("unauthenticated POST is rejected with 401", async () => {
+    const res = await request(app).post("/events").type("form").send(validBody);
+
+    expect(res.status).toBe(401);
   });
 });
