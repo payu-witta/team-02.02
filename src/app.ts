@@ -18,8 +18,10 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import { IEventDetailController } from "./events/EventDetailController";
 import type { IEventController } from "./events/IEventController";
 import type { IEventFilterService } from "./events/EventService";
+
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -41,6 +43,7 @@ class ExpressApp implements IApp {
     private readonly rsvpController: IRsvpController,
     private readonly eventController: IEventController,
     private readonly eventFilterService: IEventFilterService,
+    private readonly eventDetailController: IEventDetailController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -392,6 +395,13 @@ class ExpressApp implements IApp {
 
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
+    this.app.get(
+      "/events/:eventId",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        await this.eventDetailController.showEventDetail(req, res);
+      }),
+    );
 
     this.app.get(
       "/home",
@@ -457,7 +467,8 @@ export function CreateApp(
   rsvpController: IRsvpController,
   eventController: IEventController,
   eventFilterService: IEventFilterService,
+  eventDetailController: IEventDetailController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, rsvpController, eventController, eventFilterService, logger);
+  return new ExpressApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, logger);
 }
