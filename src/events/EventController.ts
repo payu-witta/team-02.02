@@ -66,6 +66,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.createEvent({
       title: typeof body.title === "string" ? body.title : "",
