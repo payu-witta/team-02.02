@@ -48,6 +48,52 @@ describe("Feature 3 — Event Editing: invalid state", () => {
   });
 });
 
+describe("Feature 3 — Event Editing: invalid input", () => {
+  it("end datetime before start datetime → 400", async () => {
+    const agent = await loginAs(app, "staff");
+    const eventId = await seedEvent(app, agent);
+
+    const res = await agent
+      .post(`/events/${eventId}/edit`)
+      .type("form")
+      .send({
+        ...BASE_EVENT,
+        startDatetime: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 16),
+        endDatetime:   new Date(Date.now() + 86_400_000).toISOString().slice(0, 16),
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("title exceeding 100 characters → 400", async () => {
+    const agent = await loginAs(app, "staff");
+    const eventId = await seedEvent(app, agent);
+
+    const res = await agent
+      .post(`/events/${eventId}/edit`)
+      .type("form")
+      .send({ ...BASE_EVENT, title: "A".repeat(101) });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("Feature 3 — Event Editing: edge cases", () => {
+  it("admin can edit an event they do not own → 302", async () => {
+    const staffAgent = await loginAs(app, "staff");
+    const eventId = await seedEvent(app, staffAgent);
+
+    const adminAgent = await loginAs(app, "admin");
+    const res = await adminAgent
+      .post(`/events/${eventId}/edit`)
+      .type("form")
+      .send({ ...BASE_EVENT, title: "Admin Override" });
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(`/events/${eventId}`);
+  });
+});
+
 describe("Feature 3 — Event Editing: unauthorized", () => {
   it("member (user role) is rejected with 403", async () => {
     const staffAgent = await loginAs(app, "staff");
