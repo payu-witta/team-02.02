@@ -163,6 +163,7 @@ class EventController implements IEventController {
         session,
         event,
         pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
