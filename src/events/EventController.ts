@@ -54,7 +54,20 @@ class EventController implements IEventController {
       return;
     }
 
-    res.render("events/detail", { session, event: result.value });
+    const event = result.value;
+    const currentUser = session.authenticatedUser;
+    const isOwner = currentUser?.userId === event.organizerId;
+    const isAdmin = currentUser?.role === "admin";
+
+    if (event.status === "draft" && !isOwner && !isAdmin) {
+      res.status(404).render("partials/error", {
+        message: "Event not found.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/detail", { session, event });
   }
 
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
