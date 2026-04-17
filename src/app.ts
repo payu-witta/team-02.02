@@ -338,7 +338,7 @@ class ExpressApp implements IApp {
         }
         const session = touchAppSession(sessionStore(req));
         const currentUser = getAuthenticatedUser(sessionStore(req))!;
-        await this.eventController.editFromForm(res, String(req.params.id), req.body as Record<string, unknown>, currentUser, session);
+        await this.eventController.editFromForm(res, String(req.params.id), req.body as Record<string, unknown>, currentUser, session, this.isHtmxRequest(req));
       }),
     );
 
