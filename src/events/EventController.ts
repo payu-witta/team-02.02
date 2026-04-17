@@ -169,6 +169,10 @@ class EventController implements IEventController {
     }
 
     this.logger.info(`Event updated: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
