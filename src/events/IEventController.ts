@@ -14,6 +14,7 @@ export interface IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void>;
   showEditForm(
     res: Response,
