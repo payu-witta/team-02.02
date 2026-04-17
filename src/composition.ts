@@ -50,3 +50,4 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   return CreateApp(authController, rsvpController, eventController, eventFilterService,eventDetailController, myRsvpsController, resolvedLogger);
 
 }
+
