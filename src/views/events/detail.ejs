@@ -1,4 +1,3 @@
-
 <h1><%= event.title %></h1>
 
 <p><%= event.description %></p>
@@ -8,3 +7,16 @@
 <p><strong>Starts:</strong> <%= event.startDatetime %></p>
 
 <p><strong>Ends:</strong> <%= event.endDatetime %></p>
+<p><strong>Attendee count:</strong> <%= attendeeCount %></p>
+
+<% if (currentUserRsvp) { %>
+  <p><strong>Your RSVP:</strong> <%= currentUserRsvp.status %></p>
+<% } %>
+
+<% if (canEdit) { %>
+  <p>You can edit this event.</p>
+<% } %>
+
+<% if (showRsvpButton) { %>
+  <p>RSVP button will go here in a later sprint.</p>
+<% } %>

@@ -4,6 +4,7 @@ import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
 import { IRsvpController } from "./rsvp/RsvpController";
+import { IMyRsvpsController } from "./rsvp/MyRsvpsController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -21,8 +22,6 @@ import { ILoggingService } from "./service/LoggingService";
 import { IEventDetailController } from "./events/EventDetailController";
 import type { IEventController } from "./events/IEventController";
 import type { IEventFilterService } from "./events/EventService";
-
-
 type AsyncRequestHandler = RequestHandler;
 
 function asyncHandler(fn: AsyncRequestHandler) {
@@ -39,11 +38,12 @@ class ExpressApp implements IApp {
   private readonly app: express.Express;
 
   constructor(
-    private readonly authController: IAuthController,
+private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
     private readonly eventController: IEventController,
     private readonly eventFilterService: IEventFilterService,
     private readonly eventDetailController: IEventDetailController,
+    private readonly myRsvpsController: IMyRsvpsController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -145,6 +145,13 @@ class ExpressApp implements IApp {
         this.logger.info("GET /");
         const store = sessionStore(req);
         res.redirect(isAuthenticatedSession(store) ? "/home" : "/login");
+      }),
+    );
+    this.app.get(
+      "/my-rsvps",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        await this.myRsvpsController.showMyRsvps(req, res);
       }),
     );
 
@@ -313,15 +320,6 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
-      "/events/:id",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        const session = recordPageView(sessionStore(req));
-        await this.eventController.showDetail(res, String(req.params.id), session);
-      }),
-    );
-
-    this.app.get(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
         if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can edit events.")) {
@@ -468,7 +466,17 @@ export function CreateApp(
   eventController: IEventController,
   eventFilterService: IEventFilterService,
   eventDetailController: IEventDetailController,
+  myRsvpsController: IMyRsvpsController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, logger);
+  return new ExpressApp(
+    authController,
+    rsvpController,
+    eventController,
+    eventFilterService,
+    eventDetailController,
+    myRsvpsController,
+    logger,
+  );
 }
+
