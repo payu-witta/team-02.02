@@ -7,6 +7,18 @@
 %>
 
 <%- include('./partials/header', { event: event, session: session }) %>
+<% if (canEdit) { %>
+  <p>You can edit this event.</p>
+<% } %>
+<p><strong>Attendee count:</strong> <%= attendeeCount %></p>
+
+<% if (currentUserRsvp) { %>
+  <p><strong>Your RSVP:</strong> <%= currentUserRsvp.status %></p>
+<% } %>
+
+<% if (showRsvpButton) { %>
+  <p>RSVP button will go here in a later sprint.</p>
+<% } %>
 
 <div class="grid gap-5 max-w-2xl">
 
