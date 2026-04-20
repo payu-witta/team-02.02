@@ -180,10 +180,12 @@ export class EventService implements IEventService {
     if (input.startDatetime !== undefined) changes.startDatetime = input.startDatetime;
     if (input.endDatetime !== undefined) changes.endDatetime = input.endDatetime;
 
+
     const updateResult = await this.eventRepo.update(input.eventId, changes);
     if (updateResult.ok === false) {
       return Err(EventNotFoundError(updateResult.value.message));
     }
+
 
     return Ok(updateResult.value);
   }
@@ -218,6 +220,7 @@ export class EventService implements IEventService {
     return this.eventRepo.update(input.eventId, { status: "cancelled" });
   }
 
+
   async getOrganizerDashboard(
     actingUserId: string,
     role: UserRole,
@@ -226,12 +229,15 @@ export class EventService implements IEventService {
     const eventsResult = await this.eventRepo.findAll(filter);
 
     if (!eventsResult.ok) {
+
       return Err(InvalidStateError("Failed to fetch events."));
+
     }
 
     const eventsWithCounts = await Promise.all(
       eventsResult.value.map(async (event) => {
         const countResult = await this.rsvpRepo.countGoingByEventId(event.id);
+
         return {
           ...event,
           attendeeCount: countResult.ok ? countResult.value : 0,
@@ -256,6 +262,7 @@ export class EventService implements IEventService {
     return this.eventRepo.findAll(filters);
   }
 }
+
 
 export function CreateEventService(
   eventRepo: IEventRepository,

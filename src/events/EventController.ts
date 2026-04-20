@@ -54,7 +54,20 @@ class EventController implements IEventController {
       return;
     }
 
-    res.render("events/detail", { session, event: result.value });
+    const event = result.value;
+    const currentUser = session.authenticatedUser;
+    const isOwner = currentUser?.userId === event.organizerId;
+    const isAdmin = currentUser?.role === "admin";
+
+    if (event.status === "draft" && !isOwner && !isAdmin) {
+      res.status(404).render("partials/error", {
+        message: "Event not found.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/detail", { session, event });
   }
 
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
@@ -66,6 +79,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.createEvent({
       title: typeof body.title === "string" ? body.title : "",
@@ -82,11 +96,19 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Create event failed: ${result.value.message}`);
-      res.status(status).render("events/create", { session, pageError: result.value.message });
+      res.status(status).render("events/create", {
+        session,
+        pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
+      });
       return;
     }
 
     this.logger.info(`Event created: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
@@ -128,6 +150,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.editEvent({
       eventId,
@@ -153,11 +176,16 @@ class EventController implements IEventController {
         session,
         event,
         pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
 
     this.logger.info(`Event updated: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
