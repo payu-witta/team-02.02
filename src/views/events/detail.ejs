@@ -6,27 +6,7 @@
         session.authenticatedUser.userId === event.organizerId));
 %>
 
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <div class="flex items-start justify-between gap-4 flex-wrap">
-    <div>
-      <div class="flex items-center gap-2 mb-2">
-        <%- include('./partials/controls', { event: event, session: session }) %>
-        <span class="text-xs text-slate-400 capitalize ml-2"><%= event.category %></span>
-      </div>
-      <h1 class="text-3xl font-bold text-slate-900 mb-1"><%= event.title %></h1>
-      <p class="text-slate-500"><%= event.location %></p>
-    </div>
-    <% if (canEdit) { %>
-      <a
-        href="/events/<%= event.id %>/edit"
-        class="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 no-underline"
-      >
-        Edit Event
-      </a>
-    <% } %>
-    
-  </div>
-</section>
+<%- include('./partials/header', { event: event, session: session }) %>
 
 <div class="grid gap-5 max-w-2xl">
 
