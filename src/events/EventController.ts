@@ -182,6 +182,15 @@ class EventController implements IEventController {
     }
 
     this.logger.info(`Event published: ${eventId}`);
+
+    if (res.req.headers["hx-request"]) {
+      return res.render("events/partials/header", {
+        session,
+        event: result.value,
+        layout: false, 
+      });
+    }
+
     res.redirect(`/events/${eventId}`);
   }
 
@@ -205,6 +214,15 @@ class EventController implements IEventController {
     }
 
     this.logger.info(`Event cancelled: ${eventId}`);
+
+    if (res.req.headers["hx-request"]) {
+      return res.render("events/partials/header", {
+        session,
+        event: result.value,
+        layout: false,
+      });
+    }
+
     res.redirect(`/events/${eventId}`);
   }
 
