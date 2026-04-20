@@ -1,22 +1,68 @@
-<h1><%= event.title %></h1>
+<%
+  const canEdit =
+    session.authenticatedUser &&
+    (session.authenticatedUser.role === "admin" ||
+      (session.authenticatedUser.role === "staff" &&
+        session.authenticatedUser.userId === event.organizerId));
+%>
 
-<p><%= event.description %></p>
-
-<p><strong>Location:</strong> <%= event.location %></p>
-
-<p><strong>Starts:</strong> <%= event.startDatetime %></p>
-
-<p><strong>Ends:</strong> <%= event.endDatetime %></p>
-<p><strong>Attendee count:</strong> <%= attendeeCount %></p>
-
-<% if (currentUserRsvp) { %>
-  <p><strong>Your RSVP:</strong> <%= currentUserRsvp.status %></p>
-<% } %>
+<%- include('./partials/header', { event: event, session: session }) %>
 
 <% if (canEdit) { %>
   <p>You can edit this event.</p>
 <% } %>
 
+<div class="flex flex-col gap-2 mb-6 px-6">
+  <p class="text-sm text-slate-600">
+    <strong>Attendee count:</strong> <%= attendeeCount %> / <%= event.capacity || 'No limit' %>
+  </p>
+
+<% if (currentUserRsvp) { %>
+    <p class="text-sm text-slate-600"><strong>Your RSVP:</strong> <%= currentUserRsvp.status %></p>
+  <% } %>
+</div>
+
 <% if (showRsvpButton) { %>
   <p>RSVP button will go here in a later sprint.</p>
 <% } %>
+
+<div class="grid gap-5 max-w-2xl">
+
+  <section class="p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+    <h2 class="text-base font-semibold text-slate-700 mb-3">About</h2>
+    <p class="text-slate-700 whitespace-pre-line"><%= event.description %></p>
+  </section>
+
+  <section class="p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+    <h2 class="text-base font-semibold text-slate-700 mb-3">Details</h2>
+    <dl class="grid gap-3 text-sm">
+      <div class="grid grid-cols-[120px_1fr] gap-2">
+        <dt class="text-slate-500 font-medium">Starts</dt>
+        <dd class="text-slate-800"><%= event.startDatetime.toLocaleString() %></dd>
+      </div>
+      <div class="grid grid-cols-[120px_1fr] gap-2">
+        <dt class="text-slate-500 font-medium">Ends</dt>
+        <dd class="text-slate-800"><%= event.endDatetime.toLocaleString() %></dd>
+      </div>
+      <div class="grid grid-cols-[120px_1fr] gap-2">
+        <dt class="text-slate-500 font-medium">Location</dt>
+        <dd class="text-slate-800"><%= event.location %></dd>
+      </div>
+      <div class="grid grid-cols-[120px_1fr] gap-2">
+        <dt class="text-slate-500 font-medium">Category</dt>
+        <dd class="text-slate-800 capitalize"><%= event.category %></dd>
+      </div>
+      <div class="grid grid-cols-[120px_1fr] gap-2">
+        <dt class="text-slate-500 font-medium">Capacity</dt>
+        <dd class="text-slate-800">
+          <% if (event.capacity != null) { %>
+            <%= event.capacity %> spots
+          <% } else { %>
+            No limit
+          <% } %>
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+</div>
