@@ -1,6 +1,17 @@
 <h1><%= event.title %></h1>
 
 <p><%= event.description %></p>
+<h1><%= event.title %></h1>
+<p><%= event.description %></p>
+
+<div id="rsvp-section">
+  <button
+    hx-post="/events/<%= event.id %>/rsvp"
+    hx-target="#rsvp-section"
+    hx-swap="outerHTML">
+    RSVP
+  </button>
+</div>
 
 <p><strong>Location:</strong> <%= event.location %></p>
 
