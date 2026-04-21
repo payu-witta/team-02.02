@@ -3,12 +3,21 @@
   <p class="text-slate-500">Fill out the form below to create a new draft event.</p>
 </section>
 
+<div id="create-form-section">
+
 <% if (pageError) { %>
   <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
 <section class="max-w-2xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form class="grid gap-4" method="post" action="/events">
+  <form
+    class="grid gap-4"
+    method="post"
+    action="/events"
+    hx-post="/events"
+    hx-target="#create-form-section"
+    hx-swap="outerHTML"
+  >
 
     <div class="grid gap-1.5">
       <label for="title" class="text-sm font-medium">Title <span class="text-red-500">*</span></label>
@@ -109,3 +118,5 @@
 
   </form>
 </section>
+
+</div>

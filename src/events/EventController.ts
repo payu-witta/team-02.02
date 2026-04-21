@@ -79,6 +79,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.createEvent({
       title: typeof body.title === "string" ? body.title : "",
@@ -95,11 +96,19 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Create event failed: ${result.value.message}`);
-      res.status(status).render("events/create", { session, pageError: result.value.message });
+      res.status(status).render("events/create", {
+        session,
+        pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
+      });
       return;
     }
 
     this.logger.info(`Event created: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
@@ -141,6 +150,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.editEvent({
       eventId,
@@ -166,11 +176,16 @@ class EventController implements IEventController {
         session,
         event,
         pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
 
     this.logger.info(`Event updated: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
@@ -195,6 +210,15 @@ class EventController implements IEventController {
     }
 
     this.logger.info(`Event published: ${eventId}`);
+
+    if (res.req.headers["hx-request"]) {
+      return res.render("events/partials/header", {
+        session,
+        event: result.value,
+        layout: false, 
+      });
+    }
+
     res.redirect(`/events/${eventId}`);
   }
 
@@ -218,6 +242,15 @@ class EventController implements IEventController {
     }
 
     this.logger.info(`Event cancelled: ${eventId}`);
+
+    if (res.req.headers["hx-request"]) {
+      return res.render("events/partials/header", {
+        session,
+        event: result.value,
+        layout: false,
+      });
+    }
+
     res.redirect(`/events/${eventId}`);
   }
 
