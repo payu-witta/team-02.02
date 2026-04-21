@@ -1,0 +1,36 @@
+<form
+  action="/events"
+  method="GET"
+  hx-get="/events"
+  hx-target="#event-list-page"
+  hx-swap="outerHTML"
+  hx-push-url="true"
+  class="flex gap-3 mb-6"
+>
+  <select
+    name="category"
+    hx-trigger="change"
+    class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+  >
+    <option value="">All categories</option>
+    <option value="social"      <%= category === 'social'      ? 'selected' : '' %>>Social</option>
+    <option value="educational" <%= category === 'educational' ? 'selected' : '' %>>Educational</option>
+    <option value="volunteer"   <%= category === 'volunteer'   ? 'selected' : '' %>>Volunteer</option>
+    <option value="sports"      <%= category === 'sports'      ? 'selected' : '' %>>Sports</option>
+    <option value="arts"        <%= category === 'arts'        ? 'selected' : '' %>>Arts</option>
+  </select>
+
+  <select
+    name="timeframe"
+    hx-trigger="change"
+    class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+  >
+    <option value="upcoming"     <%= timeframe === 'upcoming'     ? 'selected' : '' %>>All upcoming</option>
+    <option value="this_week"    <%= timeframe === 'this_week'    ? 'selected' : '' %>>This week</option>
+    <option value="this_weekend" <%= timeframe === 'this_weekend' ? 'selected' : '' %>>This weekend</option>
+  </select>
+
+  <noscript>
+    <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Apply</button>
+  </noscript>
+</form>
