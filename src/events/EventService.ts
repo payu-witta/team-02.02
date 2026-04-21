@@ -8,13 +8,15 @@ import type {
   OrganizerDashboardData,
   SearchEventsInput,
 } from "./IEventService";
-import type { EventError } from "./errors";
+import type { EventError, FilterError } from "./errors";
 import {
   EventNotFoundError,
   InvalidInputError,
   UnauthorizedError,
   InvalidStateError,
   InvalidTransitionError,
+  InvalidCategoryError,
+  InvalidTimeframeError,
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
 import type { UserRole } from "../auth/User";
@@ -277,18 +279,27 @@ export interface FilterEventsInput {
 }
 
 export interface IEventFilterService {
-  filterEvents(input: FilterEventsInput): Promise<Result<Event[], EventError>>;
+  filterEvents(input: FilterEventsInput): Promise<Result<Event[], EventError | FilterError>>;
 }
 
 export function CreateEventFilterService(repo: IEventRepository): IEventFilterService {
   return {
     async filterEvents(input: FilterEventsInput) {
-      const filters: EventFilters = {
+      const VALID_TIMEFRAMES = ["upcoming", "this_week", "this_weekend"] as const;
+
+      if (input.category !== undefined && !VALID_CATEGORIES.includes(input.category as any)) {
+        return Err(InvalidCategoryError('Invalid category "${input.category}". Must be one of: ${VALID_CATEGORIES.join(", ")}.'));
+      }
+
+      if (input.timeframe !== undefined && !VALID_TIMEFRAMES.includes(input.timeframe as any)) {
+        return Err(InvalidTimeframeError('Invalid timeframe: "${input.timeframe}". Must be one of: ${VALID_TIMEFRAMES.join(", ")}.'));
+      }
+
+      return repo.findAll({
         status: "published",
         ...(input.category ? { category: input.category } : {}),
         ...(input.timeframe ? { timeframe: input.timeframe } : {}),
-      };
-      return repo.findAll(filters);
+      })
     },
   };
 }
