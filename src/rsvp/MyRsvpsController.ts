@@ -21,6 +21,10 @@ class MyRsvpsController implements IMyRsvpsController {
       res.redirect("/login");
       return;
     }
+    if (user.role !== "user"){
+      res.status(403).send("Bad");
+      return;
+    }
 
     const result = await this.service.getMyRsvps({
       userId: user.userId,
