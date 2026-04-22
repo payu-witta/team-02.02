@@ -3,6 +3,8 @@ import {EventTransitionInput} from "../../src/events/IEventService";
 import { IEventRepository } from "../../src/events/InEventRepository";
 import { IRsvpRepository } from "../../src/rsvp/InRsvpRepository";
 import { Ok, Err } from "../../src/lib/result";
+import { CreateEventDetailService } from "../../src/events/EventDetailService";;
+
 
 describe("EventService - Transitions", () => {
   let service: EventService;
@@ -180,3 +182,89 @@ describe("EventService - Transitions", () => {
 });
   });
 });
+
+describe("EventDetailService", () =>{
+  let service: ReturnType<typeof CreateEventDetailService>;;
+  let mockEventRepo: jest.Mocked<IEventRepository>;
+  let mockRsvpRepo: jest.Mocked<IRsvpRepository>;
+  
+  beforeEach(() => {
+    mockEventRepo = {
+      findById: jest.fn(),
+      update: jest.fn(),
+      findAll: jest.fn(),
+    } as any;
+
+    mockRsvpRepo = {
+      findByEventAndUser: jest.fn(),
+      countGoingByEventId: jest.fn(),
+    } as any;
+
+    service = CreateEventDetailService(mockEventRepo, mockRsvpRepo);  
+  });
+
+
+  it("returns error when there isnt an event", async() =>{
+      mockEventRepo.findById.mockResolvedValue(
+      Err({
+        name: "EventNotFoundError",
+        message: "Event not found",
+      }) as any
+    );
+
+    const result = await service.getEventDetail({
+      eventId: "no",
+      actingUserId: "user-1",
+      actingUserRole: "user",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.value.name).toBe("EventNotFoundError");
+    }
+  });
+    it("returns event if there", async() =>{
+      mockEventRepo.findById.mockResolvedValue(
+        Ok({
+          id: "e1",
+          organizerId: "staff-1",
+          status: "published",
+        } as any)
+      );
+
+      mockRsvpRepo.findByEventAndUser.mockResolvedValue(Ok(null));
+      mockRsvpRepo.countGoingByEventId.mockResolvedValue(Ok(2));
+
+      const result = await service.getEventDetail({
+        eventId: "e1",
+        actingUserId: "user-1",
+        actingUserRole: "user",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.event.id).toBe("e1");
+        expect(result.value.attendeeCount).toBe(2);
+      }
+  });
+    it("doesnt let user see draft", async() =>{
+      mockEventRepo.findById.mockResolvedValue(
+        Ok({
+          id: "e2",
+          organizerId: "staff-1",
+          status: "draft",
+        } as any)
+      );
+
+      const result = await service.getEventDetail({
+        eventId: "e2",
+        actingUserId: "user-1",
+        actingUserRole: "user",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("EventNotFoundError");
+      }
+  });
+})
