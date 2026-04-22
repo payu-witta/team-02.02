@@ -1,7 +1,7 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import { loginAs } from "../helpers/authSession";
-import { seedEvent } from "../helpers/seedEvent";
+import { loginAs, createUserAndLogin } from "../helpers/authSession";
+import { seedEvent, BASE_EVENT } from "../helpers/seedEvent";
 
 const app = createComposedApp().getExpressApp();
 
@@ -9,6 +9,20 @@ async function seedPublishedEvent(
   staffAgent: Awaited<ReturnType<typeof loginAs>>,
 ): Promise<string> {
   const eventId = await seedEvent(app, staffAgent);
+  await staffAgent.post(`/events/${eventId}/publish`).expect(302);
+  return eventId;
+}
+
+async function seedPublishedEventWithCapacity(
+  staffAgent: Awaited<ReturnType<typeof loginAs>>,
+  capacity: number,
+): Promise<string> {
+  const res = await staffAgent
+    .post("/events")
+    .type("form")
+    .send({ ...BASE_EVENT, capacity: String(capacity) })
+    .expect(302);
+  const eventId = (res.headers.location as string).replace("/events/", "");
   await staffAgent.post(`/events/${eventId}/publish`).expect(302);
   return eventId;
 }
@@ -103,6 +117,92 @@ describe("Feature 4 — RSVP Toggle: error cases", () => {
       .set("HX-Request", "true");
 
     expect(res.status).toBe(409);
+  });
+});
+
+describe("Feature 4 — RSVP Toggle: capacity enforcement and reactivation", () => {
+  it("second member is waitlisted when event is full", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@cap.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEventWithCapacity(staff, 1);
+
+    const resA = await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    expect(resA.status).toBe(200);
+    expect(resA.text).toContain("Going");
+
+    const resB = await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    expect(resB.status).toBe(200);
+    expect(resB.text).toContain("Waitlisted");
+  });
+
+  it("cancelling going RSVP promotes the waitlisted member", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@promote.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEventWithCapacity(staff, 1);
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    const resB = await userB.get(`/events/${eventId}/rsvp`);
+    expect(resB.status).toBe(200);
+    expect(resB.text).toContain("Going");
+    expect(resB.text).not.toContain("Waitlisted");
+  });
+
+  it("reactivating a cancelled RSVP on a full event lands on waitlist", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@reactivate.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEventWithCapacity(staff, 1);
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    const resA = await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    expect(resA.status).toBe(200);
+    expect(resA.text).toContain("Waitlisted");
+  });
+
+  it("no capacity limit → all members RSVP as going", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@nolimit.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEvent(staff);
+
+    const resA = await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    const resB = await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    expect(resA.text).toContain("Going");
+    expect(resB.text).toContain("Going");
   });
 });
 
