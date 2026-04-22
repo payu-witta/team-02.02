@@ -212,7 +212,9 @@ class EventController implements IEventController {
     this.logger.info(`Event published: ${eventId}`);
 
     if (res.req.headers["hx-request"]) {
-      return res.render("events/partials/header", {
+      const isDashboard = res.req.query.context === "dashboard";
+      const viewPath = isDashboard ? "events/partials/dashboard-item" : "events/partials/header";
+      return res.render(viewPath, {
         session,
         event: result.value,
         layout: false, 
@@ -244,9 +246,11 @@ class EventController implements IEventController {
     this.logger.info(`Event cancelled: ${eventId}`);
 
     if (res.req.headers["hx-request"]) {
-      return res.render("events/partials/header", {
+      const isDashboard = res.req.query.context === "dashboard";
+      const viewPath = isDashboard ? "events/partials/dashboard-item" : "events/partials/header";
+      return res.render(viewPath, {
         session,
-        event: result.value,
+        event: { ...result.value, attendeeCount: 0 },
         layout: false,
       });
     }
