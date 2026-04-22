@@ -1,19 +1,19 @@
 <h1>My RSVPs</h1>
 
-<h2>Going</h2>
-<% if (going.length === 0) { %>
+<h2>upcoming</h2>
+<% if (upcoming.length === 0) { %>
   <p>No RSVPs</p>
 <% } %>
 
-<% going.forEach(({ event }) => { %>
+<% upcoming.forEach(({ event }) => { %>
   <p><%= event.title %></p>
 <% }) %>
 
-<h2>Not Going</h2>
-<% if (notgoing.length === 0) { %>
+<h2>history</h2>
+<% if (history.length === 0) { %>
   <p>No RSVPs</p>
 <% } %>
 
-<% notgoing.forEach(({ event }) => { %>
+<% history.forEach(({ event }) => { %>
   <p><%= event.title %></p>
 <% }) %>
