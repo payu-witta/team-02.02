@@ -205,6 +205,16 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Publish failed for ${eventId}: ${result.value.message}`);
+
+      if (res.req.headers["hx-request"]) {
+  res.render("events/partials/header", {
+    session,
+    event: result.value,
+    layout: false,
+  });
+  return; // Just return; on its own line is 'void'
+}
+
       res.status(status).redirect(`/events/${eventId}`);
       return;
     }

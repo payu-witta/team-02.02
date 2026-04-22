@@ -115,6 +115,47 @@ describe("EventService - Transitions", () => {
     });
   });
 
+  describe("cancelEvent Transitions", () => {
+    it("should return UnauthorizedError if a non-owner Staff tries to cancel", async () => {
+      mockEventRepo.findById.mockResolvedValue(Ok({
+        id: "evt-123",
+        organizerId: "owner-id",
+        status: "published",
+      } as any));
+
+      const result = await service.cancelEvent({
+        eventId: "evt-123",
+        actingUserId: "not-the-owner",
+        actingUserRole: "staff"
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("UnauthorizedError");
+      }
+    });
+
+    // Add this to satisfy "Once cancelled, an event cannot be restored"
+    it("should fail if trying to cancel an already 'cancelled' event", async () => {
+      mockEventRepo.findById.mockResolvedValue(Ok({
+        id: "evt-123",
+        organizerId: "user-1",
+        status: "cancelled",
+      } as any));
+
+      const result = await service.cancelEvent({
+        eventId: "evt-123",
+        actingUserId: "user-1",
+        actingUserRole: "staff"
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("InvalidTransitionError");
+      }
+    });
+  });
+
   describe("getOrganizerDashboard", () => {
     const mockEvents = [
       { id: "e1", status: "published", organizerId: "user-1" },
@@ -178,5 +219,35 @@ describe("EventService - Transitions", () => {
     expect(result.value.message).toContain("Failed to fetch events");
   }
 });
+  });
+
+  describe("getOrganizerDashboard Security", () => {
+    // This satisfies the "Members cannot access this page" requirement
+    it("should return UnauthorizedError if a Member tries to access the dashboard", async () => {
+      const result = await service.getOrganizerDashboard("user-1", "user");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("UnauthorizedError");
+      }
+    });
+  });
+
+  describe("Error Mapping Consistency", () => {
+    // Updated to match your previous turn's fix
+    it("should return an error if fetching events fails (Wrapped as InvalidStateError)", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Err({ 
+        name: "RepositoryError", 
+        message: "Connection failed" 
+      }) as any);
+
+      const result = await service.getOrganizerDashboard("user-1", "staff");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        // Ensuring the service wraps repo errors for the controller
+        expect(result.value.name).toBe("InvalidStateError");
+      }
+    });
   });
 });

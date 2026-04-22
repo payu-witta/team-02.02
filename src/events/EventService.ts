@@ -227,6 +227,10 @@ export class EventService implements IEventService {
     actingUserId: string,
     role: UserRole,
   ): Promise<Result<OrganizerDashboardData, EventError>> {
+    if (role === "user") {
+      return Err(UnauthorizedError("Members do not have access to the organizer dashboard."));
+    }
+
     const filter = role === "admin" ? {} : { organizerId: actingUserId };
     const eventsResult = await this.eventRepo.findAll(filter);
 
