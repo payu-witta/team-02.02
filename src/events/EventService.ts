@@ -17,6 +17,7 @@ import {
   InvalidTransitionError,
   InvalidCategoryError,
   InvalidTimeframeError,
+  InvalidSearchError
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
 import type { UserRole } from "../auth/User";
@@ -258,13 +259,19 @@ export class EventService implements IEventService {
     });
   }
 
-  async searchEvents(input: SearchEventsInput): Promise<Result<Event[], EventError>> {
+  async searchEvents(input: SearchEventsInput) {
     const query = input.query.trim();
-    const filters: EventFilters = {
-      status: "published",
-      timeframe: "upcoming",
+
+    if (query.length > 200) {
+      return Err(InvalidSearchError("Search query must be 200 characters or fewer."));
+    }
+
+    const filters = {
+      status: "published" as const,
+      timeframe: "upcoming" as const,
       ...(query.length > 0 ? { search: query } : {}),
     };
+
     return this.eventRepo.findAll(filters);
   }
 }

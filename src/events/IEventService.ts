@@ -1,7 +1,7 @@
 import type { Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
 import type { Event } from "./InEventRepository";
-import type { EventError } from "./errors";
+import type { EventError, SearchError } from "./errors";
 
 export interface CreateEventInput {
   title: string;
@@ -56,5 +56,5 @@ export interface IEventService {
     userId: string,
     role: UserRole,
   ): Promise<Result<OrganizerDashboardData, EventError>>;
-  searchEvents(input: SearchEventsInput): Promise<Result<Event[], EventError>>;
+  searchEvents(input: SearchEventsInput): Promise<Result<Event[], EventError | SearchError>>;
 }
