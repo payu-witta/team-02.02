@@ -206,6 +206,80 @@ describe("Feature 4 — RSVP Toggle: capacity enforcement and reactivation", () 
   });
 });
 
+describe("Feature 9 — Waitlist promotion and queue positions", () => {
+  it("first waitlisted member shows position #1 in button fragment", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@pos1.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEventWithCapacity(staff, 1);
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    const resB = await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    expect(resB.text).toContain("Waitlisted");
+    expect(resB.text).toContain("#1");
+  });
+
+  it("queue shifts after promotion: #2 becomes #1", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@shift.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const userC = await createUserAndLogin(app, admin, {
+      email: "userc@shift.test",
+      displayName: "User C",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEventWithCapacity(staff, 1);
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    await userC.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    const resB = await userB.get(`/events/${eventId}/rsvp`);
+    expect(resB.text).toContain("Going");
+
+    const resC = await userC.get(`/events/${eventId}/rsvp`);
+    expect(resC.text).toContain("Waitlisted");
+    expect(resC.text).toContain("#1");
+  });
+
+  it("cancelling a waitlisted RSVP does not promote anyone", async () => {
+    const admin = await loginAs(app, "admin");
+    const staff = await loginAs(app, "staff");
+    const userA = await loginAs(app, "user");
+    const userB = await createUserAndLogin(app, admin, {
+      email: "userb@nowait.test",
+      displayName: "User B",
+      password: "password123",
+      role: "user",
+    });
+    const eventId = await seedPublishedEventWithCapacity(staff, 1);
+
+    await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+    await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
+
+    const resA = await userA.get(`/events/${eventId}/rsvp`);
+    expect(resA.text).toContain("Going");
+  });
+});
+
 describe("Feature 4 — RSVP GET status: happy path", () => {
   it("GET with no existing RSVP → 200 with default RSVP button", async () => {
     const staff = await loginAs(app, "staff");
