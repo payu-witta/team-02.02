@@ -116,7 +116,6 @@ describe("EventService - Transitions", () => {
   });
 
   describe("cancelEvent Transitions", () => {
-    // Add this to prove ownership is enforced for Staff
     it("should return UnauthorizedError if a non-owner Staff tries to cancel", async () => {
       mockEventRepo.findById.mockResolvedValue(Ok({
         id: "evt-123",
