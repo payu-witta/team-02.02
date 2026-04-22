@@ -115,6 +115,48 @@ describe("EventService - Transitions", () => {
     });
   });
 
+  describe("cancelEvent Transitions", () => {
+    // Add this to prove ownership is enforced for Staff
+    it("should return UnauthorizedError if a non-owner Staff tries to cancel", async () => {
+      mockEventRepo.findById.mockResolvedValue(Ok({
+        id: "evt-123",
+        organizerId: "owner-id",
+        status: "published",
+      } as any));
+
+      const result = await service.cancelEvent({
+        eventId: "evt-123",
+        actingUserId: "not-the-owner",
+        actingUserRole: "staff"
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("UnauthorizedError");
+      }
+    });
+
+    // Add this to satisfy "Once cancelled, an event cannot be restored"
+    it("should fail if trying to cancel an already 'cancelled' event", async () => {
+      mockEventRepo.findById.mockResolvedValue(Ok({
+        id: "evt-123",
+        organizerId: "user-1",
+        status: "cancelled",
+      } as any));
+
+      const result = await service.cancelEvent({
+        eventId: "evt-123",
+        actingUserId: "user-1",
+        actingUserRole: "staff"
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("InvalidTransitionError");
+      }
+    });
+  });
+
   describe("getOrganizerDashboard", () => {
     const mockEvents = [
       { id: "e1", status: "published", organizerId: "user-1" },
