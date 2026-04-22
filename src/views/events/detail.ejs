@@ -17,20 +17,9 @@
     <strong>Attendee count:</strong> <%= attendeeCount %> / <%= event.capacity || 'No limit' %>
   </p>
 
-<% if (currentUserRsvp) { %>
-    <p class="text-sm text-slate-600"><strong>Your RSVP:</strong> <%= currentUserRsvp.status %></p>
+<% if (showRsvpButton) { %>
+    <%- include('../rsvp/partials/button', { eventId: event.id, rsvp: currentUserRsvp, waitlistPosition }) %>
   <% } %>
-
-  <div id="rsvp-button-<%= event.id %>">
-    <form
-      hx-post="/events/<%= event.id %>/rsvp"
-      hx-target="#rsvp-button-<%= event.id %>"
-      hx-swap="outerHTML">
-      <button type="submit">
-        RSVP
-      </button>
-    </form>
-  </div>
 </div>
 
 
