@@ -55,6 +55,7 @@ private readonly authController: IAuthController,
   private registerMiddleware(): void {
     // Serve static files from src/static (create this directory to add your own assets)
     this.app.use(express.static(path.join(process.cwd(), "src/static")));
+    this.app.use(express.json());
     this.app.use(
       session({
         name: "app.sid",
