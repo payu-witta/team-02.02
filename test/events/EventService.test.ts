@@ -220,4 +220,34 @@ describe("EventService - Transitions", () => {
   }
 });
   });
+
+  describe("getOrganizerDashboard Security", () => {
+    // This satisfies the "Members cannot access this page" requirement
+    it("should return UnauthorizedError if a Member tries to access the dashboard", async () => {
+      const result = await service.getOrganizerDashboard("user-1", "user");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("UnauthorizedError");
+      }
+    });
+  });
+
+  describe("Error Mapping Consistency", () => {
+    // Updated to match your previous turn's fix
+    it("should return an error if fetching events fails (Wrapped as InvalidStateError)", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Err({ 
+        name: "RepositoryError", 
+        message: "Connection failed" 
+      }) as any);
+
+      const result = await service.getOrganizerDashboard("user-1", "staff");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        // Ensuring the service wraps repo errors for the controller
+        expect(result.value.name).toBe("InvalidStateError");
+      }
+    });
+  });
 });
