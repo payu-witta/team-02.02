@@ -14,6 +14,7 @@ export type EventDetailView = {
   event: Event;
   attendeeCount: number;
   currentUserRsvp: Rsvp | null;
+  waitlistPosition: number | null;
   canEdit: boolean;
   canCancel: boolean;
   showRsvpButton: boolean;
@@ -68,10 +69,21 @@ class EventDetailService implements IEventDetailService {
     const currentUserRsvp = rsvpResult.ok ? rsvpResult.value : null;
     const attendeeCount = attendeeCountResult.ok ? attendeeCountResult.value : 0;
 
+    let waitlistPosition: number | null = null;
+    if (currentUserRsvp?.status === "waitlisted") {
+      const allRsvpsResult = await this.rsvpRepository.findByEventId(input.eventId);
+      if (allRsvpsResult.ok) {
+        const waitlisted = allRsvpsResult.value.filter((r) => r.status === "waitlisted");
+        const idx = waitlisted.findIndex((r) => r.userId === input.actingUserId);
+        if (idx !== -1) waitlistPosition = idx + 1;
+      }
+    }
+
     return Ok({
       event,
       attendeeCount,
       currentUserRsvp,
+      waitlistPosition,
       canEdit: isOwner || isAdmin,
       canCancel: isOwner || isAdmin,
       showRsvpButton: input.actingUserRole === "user",
