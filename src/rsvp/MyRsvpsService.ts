@@ -49,7 +49,8 @@ class MyRsvpsService implements IMyRsvpsService {
         history.push(item);
       }
     }
-
+    upcoming.sort((a,b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime());
+    history.sort((a,b) => b.event.startDatetime.getTime() - a.event.startDatetime.getTime());
     return Ok({ upcoming, history });;
   }
 }

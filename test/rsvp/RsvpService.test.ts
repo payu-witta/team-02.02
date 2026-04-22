@@ -4,6 +4,8 @@ import { CreateInMemoryRsvpRepository } from "../../src/rsvp/InMemoryRsvpReposit
 import type { IRsvpRepository, Rsvp, UpsertRsvpData } from "../../src/rsvp/InRsvpRepository";
 import { CreateRsvpService } from "../../src/rsvp/RsvpService";
 import type { ILoggingService } from "../../src/service/LoggingService";
+import { CreateMyRsvpsService } from "../../src/rsvp/MyRsvpsService";
+
 
 function createLoggerMock(): ILoggingService {
   return {
@@ -235,3 +237,222 @@ describe("RsvpService waitlist promotion behavior", () => {
     expect(stillWaitlisted.value?.status).toBe("waitlisted");
   });
 });
+
+describe("MyRsvpsService", () =>{
+  it("groups going into upcoming", async () =>{
+    const mockRsvpRepo = {
+      findByUserId: jest.fn().mockResolvedValue(
+        Ok([
+          {
+            id: "r-1",
+            eventId: "event-1",
+            userId: "user-1",
+            status: "going",
+            createdAt: new Date(),
+          },
+        ])
+      ),
+    } as any;
+
+    const mockEventRepo = {
+      findById: jest.fn()
+        .mockResolvedValueOnce(
+          Ok({
+            id: "event-1",
+            title: "going event",
+            description: "",
+            location: "",
+            category: "social",
+            status: "published",
+            capacity: 10,
+            startDatetime: new Date(),
+            endDatetime: new Date(),
+            organizerId: "org-1",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+        ),
+    } as any;
+
+    const service = CreateMyRsvpsService(mockRsvpRepo, mockEventRepo);
+
+    const result = await service.getMyRsvps({
+      userId: "user-1",
+      userRole: "user",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.upcoming).toHaveLength(1);
+      expect(result.value.history).toHaveLength(0);
+    }
+  })
+      it("groups waitlisted into upcoming", async() =>{
+        const mockRsvpRepo = {
+      findByUserId: jest.fn().mockResolvedValue(
+        Ok([
+          {
+            id: "r-1",
+            eventId: "event-1",
+            userId: "user-1",
+            status: "waitlisted",
+            createdAt: new Date(),
+          },
+        ])
+      ),
+    } as any;
+
+    const mockEventRepo = {
+      findById: jest.fn()
+        .mockResolvedValueOnce(
+          Ok({
+            id: "event-1",
+            title: "waitlisted vent",
+            description: "",
+            location: "",
+            category: "social",
+            status: "published",
+            capacity: 10,
+            startDatetime: new Date(),
+            endDatetime: new Date(),
+            organizerId: "org-1",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+        ),
+    } as any;
+
+    const service = CreateMyRsvpsService(mockRsvpRepo, mockEventRepo);
+
+    const result = await service.getMyRsvps({
+      userId: "user-1",
+      userRole: "user",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.upcoming).toHaveLength(1);
+      expect(result.value.history).toHaveLength(0);
+    }
+  })
+      it("groups cancelled into history", async() =>{
+        const mockRsvpRepo = {
+      findByUserId: jest.fn().mockResolvedValue(
+        Ok([
+          {
+            id: "r-1",
+            eventId: "event-1",
+            userId: "user-1",
+            status: "cancelled",
+            createdAt: new Date(),
+          },
+        ])
+      ),
+    } as any;
+
+    const mockEventRepo = {
+      findById: jest.fn()
+        .mockResolvedValueOnce(
+          Ok({
+            id: "event-1",
+            title: "cancelled event",
+            description: "",
+            location: "",
+            category: "social",
+            status: "cancelled",
+            capacity: 10,
+            startDatetime: new Date(),
+            endDatetime: new Date(),
+            organizerId: "org-1",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+        ),
+    } as any;
+
+    const service = CreateMyRsvpsService(mockRsvpRepo, mockEventRepo);
+
+    const result = await service.getMyRsvps({
+      userId: "user-1",
+      userRole: "user",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.upcoming).toHaveLength(0);
+      expect(result.value.history).toHaveLength(1);
+    }
+  })
+
+  it("sorts upcoming in increasing order", async() =>{
+      const mockRsvpRepo = {
+      findByUserId: jest.fn().mockResolvedValue(
+        Ok([
+          {
+            id: "r-1",
+            eventId: "event-1",
+            userId: "user-1",
+            status: "going",
+            createdAt: new Date(),
+          },
+          {
+            id: "r-2",
+            eventId: "event-2",
+            userId: "user-1",
+            status: "waitlisted",
+            createdAt: new Date(),
+          },
+        ])
+      ),
+    } as any;
+
+    const mockEventRepo = {
+      findById: jest.fn()
+        .mockResolvedValueOnce(
+          Ok({
+            id: "event-1",
+            title: "second event",
+            description: "",
+            location: "",
+            category: "social",
+            status: "published",
+            capacity: 10,
+            startDatetime: new Date("2026-05-03T10:00:00.000Z"),
+            endDatetime: new Date(),
+            organizerId: "org-1",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+        )
+        .mockResolvedValueOnce(
+          Ok({
+            id: "event-2",
+            title: "first event",
+            description: "",
+            location: "",
+            category: "social",
+            status: "published",
+            capacity: 10,
+            startDatetime: new Date("2026-05-01T10:00:00.000Z"),
+            endDatetime: new Date(),
+            organizerId: "org-1",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+        ),
+    } as any;
+
+    const service = CreateMyRsvpsService(mockRsvpRepo, mockEventRepo);
+
+    const result = await service.getMyRsvps({
+      userId: "user-1",
+      userRole: "user",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.upcoming[0].event.title).toBe("first event");
+      expect(result.value.upcoming[1].event.title).toBe("second event");
+    }
+  })
+})
