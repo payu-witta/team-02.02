@@ -1,3 +1,4 @@
+import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { loginAs } from "../helpers/authSession";
 import { seedEvent } from "../helpers/seedEvent";
@@ -42,6 +43,66 @@ describe("Feature 4 — RSVP Toggle: happy path", () => {
     expect(res.text).toContain(`id="rsvp-button-${eventId}"`);
     expect(res.text).not.toContain("Going");
     expect(res.text).not.toContain("Waitlisted");
+  });
+});
+
+describe("Feature 4 — RSVP Toggle: error cases", () => {
+  it("POST as admin → 403", async () => {
+    const staff = await loginAs(app, "staff");
+    const admin = await loginAs(app, "admin");
+    const eventId = await seedPublishedEvent(staff);
+
+    const res = await admin
+      .post(`/events/${eventId}/rsvp`)
+      .set("HX-Request", "true");
+
+    expect(res.status).toBe(403);
+  });
+
+  it("POST as staff → 403", async () => {
+    const staff = await loginAs(app, "staff");
+    const eventId = await seedPublishedEvent(staff);
+
+    const res = await staff
+      .post(`/events/${eventId}/rsvp`)
+      .set("HX-Request", "true");
+
+    expect(res.status).toBe(403);
+  });
+
+  it("POST unauthenticated → 401", async () => {
+    const staff = await loginAs(app, "staff");
+    const eventId = await seedPublishedEvent(staff);
+
+    const res = await request(app)
+      .post(`/events/${eventId}/rsvp`)
+      .set("HX-Request", "true");
+
+    expect(res.status).toBe(401);
+  });
+
+  it("POST to a non-existent event → 404", async () => {
+    const user = await loginAs(app, "user");
+
+    const res = await user
+      .post("/events/00000000-0000-0000-0000-000000000000/rsvp")
+      .set("HX-Request", "true");
+
+    expect(res.status).toBe(404);
+  });
+
+  it("POST to a cancelled event → 409", async () => {
+    const staff = await loginAs(app, "staff");
+    const user = await loginAs(app, "user");
+    const eventId = await seedPublishedEvent(staff);
+
+    await staff.post(`/events/${eventId}/cancel`).expect(302);
+
+    const res = await user
+      .post(`/events/${eventId}/rsvp`)
+      .set("HX-Request", "true");
+
+    expect(res.status).toBe(409);
   });
 });
 
