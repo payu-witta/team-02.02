@@ -20,11 +20,20 @@
 <% if (currentUserRsvp) { %>
     <p class="text-sm text-slate-600"><strong>Your RSVP:</strong> <%= currentUserRsvp.status %></p>
   <% } %>
+
+  <div id="rsvp-button-<%= event.id %>">
+    <form
+      hx-post="/events/<%= event.id %>/rsvp"
+      hx-target="#rsvp-button-<%= event.id %>"
+      hx-swap="outerHTML">
+      <button type="submit">
+        RSVP
+      </button>
+    </form>
+  </div>
 </div>
 
-<% if (showRsvpButton) { %>
-  <p>RSVP button will go here in a later sprint.</p>
-<% } %>
+
 
 <div class="grid gap-5 max-w-2xl">
 
