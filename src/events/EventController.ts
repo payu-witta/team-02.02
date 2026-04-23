@@ -295,6 +295,21 @@ class EventController implements IEventController {
     });
   }
 
+  async filterEvents(
+    res: Response,
+    category: string | undefined,
+    timeframe: string | undefined,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.filterEvents({ category, timeframe: timeframe as any });
+    if (result.ok === false) {
+      this.logger.warn(`Filter events failed: ${result.value.message}`);
+      res.status(400).render("partials/error", { message: result.value.message, layout: false });
+      return;
+    }
+    res.render("events/list", { session, events: result.value, category, timeframe });
+  }
+
   async searchEvents(
     res: Response,
     query: string,
@@ -306,7 +321,7 @@ class EventController implements IEventController {
       res.status(500).render("events/search", { session, pageError: result.value.message });
       return;
     }
-    res.render("events/search", { session, events: result.value });
+    res.render("events/list", { session, events: result.value, query });
   }
 }
 

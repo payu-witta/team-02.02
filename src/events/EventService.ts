@@ -17,6 +17,7 @@ import {
   InvalidTransitionError,
   InvalidCategoryError,
   InvalidTimeframeError,
+  InvalidSearchError
 } from "./errors";
 import type { IRsvpRepository } from "../rsvp/InRsvpRepository";
 import type { UserRole } from "../auth/User";
@@ -87,6 +88,11 @@ function validateFields(
 }
 
 export { validateFields };
+
+export interface FilterEventsInput {
+  category?: string;
+  timeframe?: "upcoming" | "this_week" | "this_weekend";
+}
 
 export class EventService implements IEventService {
   constructor(
@@ -258,13 +264,37 @@ export class EventService implements IEventService {
     });
   }
 
-  async searchEvents(input: SearchEventsInput): Promise<Result<Event[], EventError>> {
-    const query = input.query.trim();
-    const filters: EventFilters = {
+  async filterEvents(input: FilterEventsInput) {
+    const VALID_TIMEFRAMES = ["upcoming", "this_week", "this_weekend"] as const;
+  
+    if (input.category !== undefined && !VALID_CATEGORIES.includes(input.category as any)) {
+      return Err(InvalidCategoryError(`Invalid category: "${input.category}". Must be one of: ${VALID_CATEGORIES.join(", ")}.`));
+    }
+  
+    if (input.timeframe !== undefined && !VALID_TIMEFRAMES.includes(input.timeframe as any)) {
+      return Err(InvalidTimeframeError(`Invalid timeframe: "${input.timeframe}". Must be one of: ${VALID_TIMEFRAMES.join(", ")}.`));
+    }
+  
+    return this.eventRepo.findAll({
       status: "published",
-      timeframe: "upcoming",
+      ...(input.category ? { category: input.category } : {}),
+      ...(input.timeframe ? { timeframe: input.timeframe } : {}),
+    });
+  }
+
+  async searchEvents(input: SearchEventsInput) {
+    const query = input.query.trim();
+
+    if (query.length > 200) {
+      return Err(InvalidSearchError("Search query must be 200 characters or fewer."));
+    }
+
+    const filters = {
+      status: "published" as const,
+      timeframe: "upcoming" as const,
       ...(query.length > 0 ? { search: query } : {}),
     };
+
     return this.eventRepo.findAll(filters);
   }
 }
@@ -275,11 +305,6 @@ export function CreateEventService(
   rsvpRepo: IRsvpRepository,
 ): IEventService {
   return new EventService(eventRepo, rsvpRepo);
-}
-
-export interface FilterEventsInput {
-  category?: string;
-  timeframe?: "upcoming" | "this_week" | "this_weekend";
 }
 
 export interface IEventFilterService {

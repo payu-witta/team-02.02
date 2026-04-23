@@ -56,4 +56,11 @@ export interface IEventController {
     query: string,
     session: IAppBrowserSession,
   ): Promise<void>;
+
+  filterEvents(
+    res: Response,
+    category: string | undefined,
+    timeframe: string | undefined,
+    session: IAppBrowserSession,
+  ): Promise<void>;
 }

@@ -48,3 +48,12 @@ export const InvalidTimeframeError = (message: string): FilterError => ({
   name: "InvalidTimeframeError",
   message,
 });
+
+// Feautre 10 - Event Search Errors
+
+export type SearchError = { name: "InvalidSearchError"; message: string };
+
+export const InvalidSearchError = (message: string): SearchError => ({
+  name: "InvalidSearchError",
+  message,
+});

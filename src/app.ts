@@ -409,27 +409,12 @@ private readonly authController: IAuthController,
     this.app.get(
       "/events",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-
-        const category = typeof req.query.category === "string" ? req.query.category : "";
-        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : "";
-
-        const eventsResult = await this.eventFilterService.filterEvents({
-          category: category.trim() ? category : undefined,
-          timeframe:
-            timeframe === "upcoming" || timeframe === "this_week" || timeframe === "this_weekend"
-              ? timeframe
-              : undefined,
-        });
-
+        if (!this.requireAuthenticated(req, res)) return;
         const session = recordPageView(sessionStore(req));
-        this.logger.info(`GET /events for ${session.browserLabel}`);
-        res.json({
-          events: eventsResult.ok ? eventsResult.value : [],
-          filters: { category, timeframe },
-        });
+        const category = typeof req.query.category === "string" ? req.query.category : undefined;
+        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
+        this.logger.info(`GET /events?category=${category}&timeframe=${timeframe}`);
+        await this.eventController.filterEvents(res, category, timeframe, session);
       }),
     );
 
