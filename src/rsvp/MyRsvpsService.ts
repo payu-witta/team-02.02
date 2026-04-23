@@ -9,8 +9,8 @@ export type MyRsvpItem = {
 };
 
 export type MyRsvpsView = {
-  going: MyRsvpItem[];
-  notgoing: MyRsvpItem[];
+  upcoming: MyRsvpItem[];
+  history: MyRsvpItem[];
 };
 
 export interface IMyRsvpsService {
@@ -33,8 +33,8 @@ class MyRsvpsService implements IMyRsvpsService {
     const rsvpResult = await this.rsvpRepo.findByUserId(input.userId);
     const rsvps = rsvpResult.ok ? rsvpResult.value : [];
 
-    const going: MyRsvpItem[] = [];
-    const notgoing: MyRsvpItem[] = [];
+    const upcoming: MyRsvpItem[] = [];
+    const history: MyRsvpItem[] = [];
 
     for (const rsvp of rsvps) {
       const eventResult = await this.eventRepo.findById(rsvp.eventId);
@@ -43,14 +43,15 @@ class MyRsvpsService implements IMyRsvpsService {
       const event = eventResult.value;
       const item = { event, rsvp };
 
-      if (rsvp.status === "going") {
-        going.push(item);
+      if (rsvp.status === "going" || rsvp.status === "waitlisted") {
+        upcoming.push(item);
       } else {
-        notgoing.push(item);
+        history.push(item);
       }
     }
-
-    return Ok({ going, notgoing });;
+    upcoming.sort((a,b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime());
+    history.sort((a,b) => b.event.startDatetime.getTime() - a.event.startDatetime.getTime());
+    return Ok({ upcoming, history });;
   }
 }
 

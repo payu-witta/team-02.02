@@ -208,19 +208,19 @@ describe("EventService - Transitions", () => {
     });
 
     it("should return an error if fetching events fails", async () => {
-  mockEventRepo.findAll.mockResolvedValue(Err({ 
-    name: "RepositoryError", 
-    message: "Connection failed" 
-  }) as any);
+      mockEventRepo.findAll.mockResolvedValue(Err({ 
+        name: "RepositoryError", 
+        message: "Connection failed" 
+      }) as any);
 
-  const result = await service.getOrganizerDashboard("user-1", "staff");
+      const result = await service.getOrganizerDashboard("user-1", "staff");
 
-  expect(result.ok).toBe(false);
-  if (!result.ok) {
-    expect(result.value.name).toBe("InvalidStateError");
-    expect(result.value.message).toContain("Failed to fetch events");
-  }
-});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("InvalidStateError");
+        expect(result.value.message).toContain("Failed to fetch events");
+      }
+    });
   });
 
   describe("getOrganizerDashboard Security", () => {
