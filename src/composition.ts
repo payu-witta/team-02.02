@@ -5,11 +5,12 @@ import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
-import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
+import { CreatePrismaEventRepository } from "./events/PrismaEventRepository";
 import { CreateEventService } from "./events/EventService";
 import { CreateEventFilterService } from "./events/EventService";
 import { CreateEventController } from "./events/EventController";
 import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
+import { getPrismaClient } from "./lib/prisma";
 import { CreateRsvpService } from "./rsvp/RsvpService";
 import { CreateRsvpController } from "./rsvp/RsvpController";
 import { CreateLoggingService } from "./service/LoggingService";
@@ -30,7 +31,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
   // Shared event repository
-  const eventRepo = CreateInMemoryEventRepository();
+  const eventRepo = CreatePrismaEventRepository(getPrismaClient());
   const rsvpRepo = CreateInMemoryRsvpRepository();
 
   // Event wiring (Features 1 & 3)
