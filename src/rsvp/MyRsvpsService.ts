@@ -9,8 +9,8 @@ export type MyRsvpItem = {
 };
 
 export type MyRsvpsView = {
-  upcoming: MyRsvpItem[];
-  history: MyRsvpItem[];
+  going: MyRsvpItem[];
+  notgoing: MyRsvpItem[];
 };
 
 export interface IMyRsvpsService {
@@ -33,8 +33,8 @@ class MyRsvpsService implements IMyRsvpsService {
     const rsvpResult = await this.rsvpRepo.findByUserId(input.userId);
     const rsvps = rsvpResult.ok ? rsvpResult.value : [];
 
-    const upcoming: MyRsvpItem[] = [];
-    const history: MyRsvpItem[] = [];
+    const going: MyRsvpItem[] = [];
+    const notgoing: MyRsvpItem[] = [];
 
     for (const rsvp of rsvps) {
       const eventResult = await this.eventRepo.findById(rsvp.eventId);
@@ -43,14 +43,14 @@ class MyRsvpsService implements IMyRsvpsService {
       const event = eventResult.value;
       const item = { event, rsvp };
 
-      if (event.status === "cancelled" || event.status === "past") {
-        history.push(item);
+      if (rsvp.status === "going") {
+        going.push(item);
       } else {
-        upcoming.push(item);
+        notgoing.push(item);
       }
     }
 
-    return Ok({ upcoming, history });
+    return Ok({ going, notgoing });;
   }
 }
 
