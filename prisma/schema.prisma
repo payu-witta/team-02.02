@@ -23,3 +23,15 @@ model Event {
 
   rsvps         Rsvp[]
 }
+
+model Rsvp {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  status    String
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, userId])
+}
