@@ -3,6 +3,8 @@ import {EventTransitionInput} from "../../src/events/IEventService";
 import { IEventRepository } from "../../src/events/InEventRepository";
 import { IRsvpRepository } from "../../src/rsvp/InRsvpRepository";
 import { Ok, Err } from "../../src/lib/result";
+import { CreateEventDetailService } from "../../src/events/EventDetailService";;
+
 
 describe("EventService - Transitions", () => {
   let service: EventService;
@@ -115,6 +117,47 @@ describe("EventService - Transitions", () => {
     });
   });
 
+  describe("cancelEvent Transitions", () => {
+    it("should return UnauthorizedError if a non-owner Staff tries to cancel", async () => {
+      mockEventRepo.findById.mockResolvedValue(Ok({
+        id: "evt-123",
+        organizerId: "owner-id",
+        status: "published",
+      } as any));
+
+      const result = await service.cancelEvent({
+        eventId: "evt-123",
+        actingUserId: "not-the-owner",
+        actingUserRole: "staff"
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("UnauthorizedError");
+      }
+    });
+
+    // Add this to satisfy "Once cancelled, an event cannot be restored"
+    it("should fail if trying to cancel an already 'cancelled' event", async () => {
+      mockEventRepo.findById.mockResolvedValue(Ok({
+        id: "evt-123",
+        organizerId: "user-1",
+        status: "cancelled",
+      } as any));
+
+      const result = await service.cancelEvent({
+        eventId: "evt-123",
+        actingUserId: "user-1",
+        actingUserRole: "staff"
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("InvalidTransitionError");
+      }
+    });
+  });
+
   describe("getOrganizerDashboard", () => {
     const mockEvents = [
       { id: "e1", status: "published", organizerId: "user-1" },
@@ -165,18 +208,134 @@ describe("EventService - Transitions", () => {
     });
 
     it("should return an error if fetching events fails", async () => {
-  mockEventRepo.findAll.mockResolvedValue(Err({ 
-    name: "RepositoryError", 
-    message: "Connection failed" 
-  }) as any);
+      mockEventRepo.findAll.mockResolvedValue(Err({ 
+        name: "RepositoryError", 
+        message: "Connection failed" 
+      }) as any);
 
-  const result = await service.getOrganizerDashboard("user-1", "staff");
+      const result = await service.getOrganizerDashboard("user-1", "staff");
 
-  expect(result.ok).toBe(false);
-  if (!result.ok) {
-    expect(result.value.name).toBe("InvalidStateError");
-    expect(result.value.message).toContain("Failed to fetch events");
-  }
-});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("InvalidStateError");
+        expect(result.value.message).toContain("Failed to fetch events");
+      }
+    });
+  });
+
+  describe("getOrganizerDashboard Security", () => {
+    // This satisfies the "Members cannot access this page" requirement
+    it("should return UnauthorizedError if a Member tries to access the dashboard", async () => {
+      const result = await service.getOrganizerDashboard("user-1", "user");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("UnauthorizedError");
+      }
+    });
+  });
+
+  describe("Error Mapping Consistency", () => {
+    // Updated to match your previous turn's fix
+    it("should return an error if fetching events fails (Wrapped as InvalidStateError)", async () => {
+      mockEventRepo.findAll.mockResolvedValue(Err({ 
+        name: "RepositoryError", 
+        message: "Connection failed" 
+      }) as any);
+
+      const result = await service.getOrganizerDashboard("user-1", "staff");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        // Ensuring the service wraps repo errors for the controller
+        expect(result.value.name).toBe("InvalidStateError");
+      }
+    });
   });
 });
+
+describe("EventDetailService", () =>{
+  let service: ReturnType<typeof CreateEventDetailService>;;
+  let mockEventRepo: jest.Mocked<IEventRepository>;
+  let mockRsvpRepo: jest.Mocked<IRsvpRepository>;
+  
+  beforeEach(() => {
+    mockEventRepo = {
+      findById: jest.fn(),
+      update: jest.fn(),
+      findAll: jest.fn(),
+    } as any;
+
+    mockRsvpRepo = {
+      findByEventAndUser: jest.fn(),
+      countGoingByEventId: jest.fn(),
+    } as any;
+
+    service = CreateEventDetailService(mockEventRepo, mockRsvpRepo);  
+  });
+
+
+  it("returns error when there isnt an event", async() =>{
+      mockEventRepo.findById.mockResolvedValue(
+      Err({
+        name: "EventNotFoundError",
+        message: "Event not found",
+      }) as any
+    );
+
+    const result = await service.getEventDetail({
+      eventId: "no",
+      actingUserId: "user-1",
+      actingUserRole: "user",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.value.name).toBe("EventNotFoundError");
+    }
+  });
+    it("returns event if there", async() =>{
+      mockEventRepo.findById.mockResolvedValue(
+        Ok({
+          id: "e1",
+          organizerId: "staff-1",
+          status: "published",
+        } as any)
+      );
+
+      mockRsvpRepo.findByEventAndUser.mockResolvedValue(Ok(null));
+      mockRsvpRepo.countGoingByEventId.mockResolvedValue(Ok(2));
+
+      const result = await service.getEventDetail({
+        eventId: "e1",
+        actingUserId: "user-1",
+        actingUserRole: "user",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.event.id).toBe("e1");
+        expect(result.value.attendeeCount).toBe(2);
+      }
+  });
+    it("doesnt let user see draft", async() =>{
+      mockEventRepo.findById.mockResolvedValue(
+        Ok({
+          id: "e2",
+          organizerId: "staff-1",
+          status: "draft",
+        } as any)
+      );
+
+      const result = await service.getEventDetail({
+        eventId: "e2",
+        actingUserId: "user-1",
+        actingUserRole: "user",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.value.name).toBe("EventNotFoundError");
+      }
+  });
+})

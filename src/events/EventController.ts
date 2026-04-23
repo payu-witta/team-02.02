@@ -54,7 +54,20 @@ class EventController implements IEventController {
       return;
     }
 
-    res.render("events/detail", { session, event: result.value });
+    const event = result.value;
+    const currentUser = session.authenticatedUser;
+    const isOwner = currentUser?.userId === event.organizerId;
+    const isAdmin = currentUser?.role === "admin";
+
+    if (event.status === "draft" && !isOwner && !isAdmin) {
+      res.status(404).render("partials/error", {
+        message: "Event not found.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/detail", { session, event });
   }
 
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
@@ -66,6 +79,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.createEvent({
       title: typeof body.title === "string" ? body.title : "",
@@ -82,11 +96,19 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Create event failed: ${result.value.message}`);
-      res.status(status).render("events/create", { session, pageError: result.value.message });
+      res.status(status).render("events/create", {
+        session,
+        pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
+      });
       return;
     }
 
     this.logger.info(`Event created: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
@@ -128,6 +150,7 @@ class EventController implements IEventController {
     body: Record<string, unknown>,
     currentUser: IAuthenticatedUserSession,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.editEvent({
       eventId,
@@ -153,11 +176,16 @@ class EventController implements IEventController {
         session,
         event,
         pageError: result.value.message,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
 
     this.logger.info(`Event updated: ${result.value.id}`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`).status(204).send();
+      return;
+    }
     res.redirect(`/events/${result.value.id}`);
   }
 
@@ -177,11 +205,32 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Publish failed for ${eventId}: ${result.value.message}`);
+
+      if (res.req.headers["hx-request"]) {
+  res.render("events/partials/header", {
+    session,
+    event: result.value,
+    layout: false,
+  });
+  return; // Just return; on its own line is 'void'
+}
+
       res.status(status).redirect(`/events/${eventId}`);
       return;
     }
 
     this.logger.info(`Event published: ${eventId}`);
+
+    if (res.req.headers["hx-request"]) {
+      const isDashboard = res.req.query.context === "dashboard";
+      const viewPath = isDashboard ? "events/partials/dashboard-item" : "events/partials/header";
+      return res.render(viewPath, {
+        session,
+        event: result.value,
+        layout: false, 
+      });
+    }
+
     res.redirect(`/events/${eventId}`);
   }
 
@@ -205,6 +254,17 @@ class EventController implements IEventController {
     }
 
     this.logger.info(`Event cancelled: ${eventId}`);
+
+    if (res.req.headers["hx-request"]) {
+      const isDashboard = res.req.query.context === "dashboard";
+      const viewPath = isDashboard ? "events/partials/dashboard-item" : "events/partials/header";
+      return res.render(viewPath, {
+        session,
+        event: { ...result.value, attendeeCount: 0 },
+        layout: false,
+      });
+    }
+
     res.redirect(`/events/${eventId}`);
   }
 
@@ -235,6 +295,21 @@ class EventController implements IEventController {
     });
   }
 
+  async filterEvents(
+    res: Response,
+    category: string | undefined,
+    timeframe: string | undefined,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.service.filterEvents({ category, timeframe: timeframe as any });
+    if (result.ok === false) {
+      this.logger.warn(`Filter events failed: ${result.value.message}`);
+      res.status(400).render("partials/error", { message: result.value.message, layout: false });
+      return;
+    }
+    res.render("events/list", { session, events: result.value, category, timeframe });
+  }
+
   async searchEvents(
     res: Response,
     query: string,
@@ -246,7 +321,7 @@ class EventController implements IEventController {
       res.status(500).render("events/search", { session, pageError: result.value.message });
       return;
     }
-    res.render("events/search", { session, events: result.value });
+    res.render("events/list", { session, events: result.value, query });
   }
 }
 

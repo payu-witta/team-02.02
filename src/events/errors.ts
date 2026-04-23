@@ -32,3 +32,28 @@ export const InvalidTransitionError = (message: string): EventError => ({
   name: "InvalidTransitionError",
   message,
 });
+
+// Feature 6 - Category and Date Filter Errors
+
+export type FilterError = 
+  | {name: "InvalidCategoryError"; message:string }
+  | {name: "InvalidTimeframeError"; message:string };
+
+export const InvalidCategoryError = (message: string): FilterError => ({
+  name: "InvalidCategoryError",
+  message,
+});
+
+export const InvalidTimeframeError = (message: string): FilterError => ({
+  name: "InvalidTimeframeError",
+  message,
+});
+
+// Feautre 10 - Event Search Errors
+
+export type SearchError = { name: "InvalidSearchError"; message: string };
+
+export const InvalidSearchError = (message: string): SearchError => ({
+  name: "InvalidSearchError",
+  message,
+});
