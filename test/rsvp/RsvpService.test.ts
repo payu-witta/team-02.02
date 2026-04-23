@@ -5,6 +5,7 @@ import type { IRsvpRepository, Rsvp, UpsertRsvpData } from "../../src/rsvp/InRsv
 import { CreateRsvpService } from "../../src/rsvp/RsvpService";
 import type { ILoggingService } from "../../src/service/LoggingService";
 import { CreateMyRsvpsService } from "../../src/rsvp/MyRsvpsService";
+import { CreateMyRsvpsController } from "../../src/rsvp/MyRsvpsController";
 
 
 function createLoggerMock(): ILoggingService {
@@ -287,20 +288,20 @@ describe("MyRsvpsService", () =>{
       expect(result.value.history).toHaveLength(0);
     }
   })
-      it("groups waitlisted into upcoming", async() =>{
-        const mockRsvpRepo = {
-      findByUserId: jest.fn().mockResolvedValue(
-        Ok([
-          {
-            id: "r-1",
-            eventId: "event-1",
-            userId: "user-1",
-            status: "waitlisted",
-            createdAt: new Date(),
-          },
-        ])
-      ),
-    } as any;
+  it("groups waitlisted into upcoming", async() =>{
+    const mockRsvpRepo = {
+    findByUserId: jest.fn().mockResolvedValue(
+      Ok([
+        {
+          id: "r-1",
+          eventId: "event-1",
+          userId: "user-1",
+          status: "waitlisted",
+          createdAt: new Date(),
+        },
+      ])
+    ),
+   } as any;
 
     const mockEventRepo = {
       findById: jest.fn()
@@ -335,8 +336,8 @@ describe("MyRsvpsService", () =>{
       expect(result.value.history).toHaveLength(0);
     }
   })
-      it("groups cancelled into history", async() =>{
-        const mockRsvpRepo = {
+    it("groups cancelled into history", async() =>{
+      const mockRsvpRepo = {
       findByUserId: jest.fn().mockResolvedValue(
         Ok([
           {
@@ -385,26 +386,26 @@ describe("MyRsvpsService", () =>{
   })
 
   it("sorts upcoming in increasing order", async() =>{
-      const mockRsvpRepo = {
-      findByUserId: jest.fn().mockResolvedValue(
-        Ok([
-          {
-            id: "r-1",
-            eventId: "event-1",
-            userId: "user-1",
-            status: "going",
-            createdAt: new Date(),
-          },
-          {
-            id: "r-2",
-            eventId: "event-2",
-            userId: "user-1",
-            status: "waitlisted",
-            createdAt: new Date(),
-          },
-        ])
-      ),
-    } as any;
+    const mockRsvpRepo = {
+    findByUserId: jest.fn().mockResolvedValue(
+      Ok([
+        {
+          id: "r-1",
+          eventId: "event-1",
+          userId: "user-1",
+          status: "going",
+          createdAt: new Date(),
+        },
+        {
+          id: "r-2",
+          eventId: "event-2",
+          userId: "user-1",
+          status: "waitlisted",
+          createdAt: new Date(),
+        },
+      ])
+    ),
+  } as any;
 
     const mockEventRepo = {
       findById: jest.fn()
@@ -455,4 +456,41 @@ describe("MyRsvpsService", () =>{
       expect(result.value.upcoming[1].event.title).toBe("second event");
     }
   })
+  it("blocks organizer from accessing my RSVPs", async () => {
+    const controller = CreateMyRsvpsController(
+      { getMyRsvps: jest.fn() } as any,
+      { info: jest.fn(), warn: jest.fn(), error: jest.fn() } as any
+    );
+
+    const req = {
+      session: {
+        app: {
+          browserId: "",
+          browserLabel: "",
+          visitCount: 0,
+          createdAt: "",
+          lastSeenAt: "",
+          authenticatedUser: {
+            userId: "",
+            email: "",
+            displayName: "",
+            role: "admin",
+            signedInAt: "",
+          },
+        },
+      },
+    } as any;
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      redirect: jest.fn(),
+      render: jest.fn(),
+    } as any;
+
+    await controller.showMyRsvps(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.send).toHaveBeenCalledWith("Bad");
+  });
 })
