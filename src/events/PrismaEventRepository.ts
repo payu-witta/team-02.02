@@ -9,6 +9,29 @@ import type {
   IEventRepository,
 } from "./InEventRepository";
 
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+
+function weekRange(now: Date): { start: Date; end: Date } {
+  const start = startOfDay(now);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
+function weekendRange(now: Date): { start: Date; end: Date } {
+  const day = now.getDay();
+  const daysUntilSat = day === 6 ? 0 : 6 - day;
+  const sat = new Date(now);
+  sat.setDate(now.getDate() + daysUntilSat);
+  sat.setHours(0, 0, 0, 0);
+  const sun = new Date(sat);
+  sun.setDate(sat.getDate() + 1);
+  sun.setHours(23, 59, 59, 999);
+  return { start: sat, end: sun };
+}
+
 function toEvent(row: PrismaEvent): Event {
   return {
     ...row,
@@ -42,6 +65,19 @@ class PrismaEventRepository implements IEventRepository {
 
     if (filters?.category !== undefined) {
       where.category = filters.category;
+    }
+
+    if (filters?.timeframe !== undefined) {
+      const now = new Date();
+      if (filters.timeframe === "upcoming") {
+        where.startDatetime = { gte: now };
+      } else if (filters.timeframe === "this_week") {
+        const { start, end } = weekRange(now);
+        where.startDatetime = { gte: now > start ? now : start, lte: end };
+      } else if (filters.timeframe === "this_weekend") {
+        const { start, end } = weekendRange(now);
+        where.startDatetime = { gte: start, lte: end };
+      }
     }
 
     let rows = await this.prisma.event.findMany({
