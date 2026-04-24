@@ -1,8 +1,11 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { loginAs } from "../helpers/authSession";
+import { cleanDatabase } from "../helpers/cleanDatabase";
 
 const app = createComposedApp().getExpressApp();
+
+beforeEach(async () => { await cleanDatabase(); });
 
 const validBody = {
   title: "Test Event",
