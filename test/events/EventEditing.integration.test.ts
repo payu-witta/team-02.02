@@ -1,8 +1,11 @@
 import { createComposedApp } from "../../src/composition";
 import { loginAs, createUserAndLogin } from "../helpers/authSession";
 import { seedEvent, BASE_EVENT } from "../helpers/seedEvent";
+import { cleanDatabase } from "../helpers/cleanDatabase";
 
 const app = createComposedApp().getExpressApp();
+
+beforeEach(async () => { await cleanDatabase(); });
 
 describe("Feature 3 — Event Editing: happy path", () => {
   it("staff edits their own event → 302 redirect to the event page", async () => {
