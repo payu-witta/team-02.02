@@ -59,13 +59,37 @@ class RsvpService implements IRsvpService {
         ? (await this.rsvpRepo.findByEventId(eventId)).value.find((r) => r.status === "waitlisted")
         : undefined;
 
-      const cancelled = await this.rsvpRepo.upsert({ eventId, userId, status: "cancelled" });
-      this.logger.info(`User ${userId} cancelled RSVP for event ${eventId}`);
-
       if (!shouldPromote || firstWaitlisted === undefined) {
+        const cancelled = await this.rsvpRepo.upsert({ eventId, userId, status: "cancelled" });
+        this.logger.info(`User ${userId} cancelled RSVP for event ${eventId}`);
         return Ok(cancelled.value);
       }
 
+      if (this.rsvpRepo.atomicCancelAndPromote) {
+        try {
+          const result = await this.rsvpRepo.atomicCancelAndPromote(
+            eventId,
+            userId,
+            firstWaitlisted.userId,
+          );
+          this.logger.info(
+            `User ${userId} cancelled RSVP; promoted ${firstWaitlisted.userId} for event ${eventId}`,
+          );
+          return Ok(result.value);
+        } catch (error) {
+          this.logger.error(
+            `Atomic cancel+promote failed for event ${eventId}: ${this.formatUnknownError(error)}`,
+          );
+          return Err(
+            PromotionFailedError(
+              `Failed to promote waitlisted RSVP for event ${eventId}; cancellation was not finalized.`,
+            ),
+          );
+        }
+      }
+
+      const cancelled = await this.rsvpRepo.upsert({ eventId, userId, status: "cancelled" });
+      this.logger.info(`User ${userId} cancelled RSVP for event ${eventId}`);
       try {
         await this.rsvpRepo.upsert({
           eventId: firstWaitlisted.eventId,
@@ -85,7 +109,6 @@ class RsvpService implements IRsvpService {
             `Rollback failed for event ${eventId}, user ${userId}: ${this.formatUnknownError(rollbackError)}`,
           );
         }
-
         return Err(
           PromotionFailedError(
             `Failed to promote waitlisted RSVP for event ${eventId}; cancellation was not finalized.`,

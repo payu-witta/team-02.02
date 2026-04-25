@@ -44,4 +44,16 @@ export interface IRsvpRepository {
    * Consumed by: Features 4, 9 (same owner)
    */
   upsert(data: UpsertRsvpData): Promise<Result<Rsvp, never>>;
+
+  /**
+   * Atomically cancel one going RSVP and promote one waitlisted RSVP to going.
+   * Optional: in-memory repos omit this and the service falls back to a manual rollback.
+   * Prisma repo implements this with $transaction to satisfy the Sprint 3 atomicity requirement.
+   * Returns the cancelled RSVP.
+   */
+  atomicCancelAndPromote?(
+    eventId: string,
+    cancelUserId: string,
+    promoteUserId: string,
+  ): Promise<Result<Rsvp, never>>;
 }

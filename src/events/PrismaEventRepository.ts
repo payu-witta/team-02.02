@@ -34,6 +34,13 @@ class PrismaEventRepository implements IEventRepository {
   async findAll(filters?: EventFilters) {
     const now = new Date();
     const where: any = {};
+    const row = await this.prisma.event.findUnique({ where: { id } });
+    if (!row) return Err(EventNotFoundError(`Event "${id}" not found.`));
+    return Ok(toEvent(row));
+  }
+
+  async findAll(filters?: EventFilters) {
+    const where: Prisma.EventWhereInput = {};
 
     if (filters?.organizerId !== undefined) {
       where.organizerId = filters.organizerId;
@@ -43,6 +50,10 @@ class PrismaEventRepository implements IEventRepository {
       where.status = Array.isArray(filters.status)
         ? { in: filters.status }
         : filters.status;
+      const statuses = Array.isArray(filters.status)
+        ? filters.status
+        : [filters.status];
+      where.status = { in: statuses };
     }
 
     if (filters?.category !== undefined) {
@@ -96,5 +107,52 @@ class PrismaEventRepository implements IEventRepository {
 }
 
 export function CreatePrismaEventRepository(prisma: PrismaClient): IEventRepository {
+  return new PrismaEventRepository(prisma);
+}
+    if (filters?.search !== undefined) {
+      const term = filters.search.toLowerCase();
+      rows = rows.filter(
+        (r) =>
+          r.title.toLowerCase().includes(term) ||
+          r.description.toLowerCase().includes(term) ||
+          r.location.toLowerCase().includes(term),
+      );
+    }
+
+    return Ok(rows.map(toEvent));
+  }
+
+  async create(data: CreateEventData) {
+    const row = await this.prisma.event.create({
+      data: { ...data, status: "draft" },
+    });
+    return Ok(toEvent(row));
+  }
+
+  async update(
+    id: string,
+    changes: Partial<Omit<Event, "id" | "createdAt" | "organizerId">>,
+  ) {
+    try {
+      const row = await this.prisma.event.update({
+        where: { id },
+        data: changes,
+      });
+      return Ok(toEvent(row));
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
+        return Err(EventNotFoundError(`Event "${id}" not found.`));
+      }
+      throw e;
+    }
+  }
+}
+
+export function CreatePrismaEventRepository(
+  prisma: PrismaClient,
+): IEventRepository {
   return new PrismaEventRepository(prisma);
 }

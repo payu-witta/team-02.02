@@ -5,6 +5,7 @@ import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
+import { CreatePrismaEventRepository } from "./events/PrismaEventRepository";
 import { CreateEventService } from "./events/EventService";
 import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
 import { CreateEventFilterService } from "./events/EventService";
