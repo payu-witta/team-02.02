@@ -9,7 +9,7 @@ import { CreatePrismaEventRepository } from "./events/PrismaEventRepository";
 import { CreateEventService } from "./events/EventService";
 import { CreateEventFilterService } from "./events/EventService";
 import { CreateEventController } from "./events/EventController";
-import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
+import { CreatePrismaRsvpRepository } from "./rsvp/PrismaRsvpRepository";
 import { getPrismaClient } from "./lib/prisma";
 import { CreateRsvpService } from "./rsvp/RsvpService";
 import { CreateRsvpController } from "./rsvp/RsvpController";
@@ -32,7 +32,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
   // Shared event repository
   const eventRepo = CreatePrismaEventRepository(getPrismaClient());
-  const rsvpRepo = CreateInMemoryRsvpRepository();
+  const rsvpRepo = CreatePrismaRsvpRepository(getPrismaClient());
 
   // Event wiring (Features 1 & 3)
 
