@@ -5,7 +5,7 @@ let client: PrismaClient | null = null;
 
 export function getPrismaClient(): PrismaClient {
   if (!client) {
-    const url = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+    const url = process.env.DATABASE_URL ?? "file:./dev.db";
     const adapter = new PrismaBetterSqlite3({ url });
     client = new PrismaClient({ adapter } as any);
   }
