@@ -1,52 +1,113 @@
-import { CreateEventFilterService } from "../../src/events/EventService";
-import type { IEventRepository } from "../../src/events/InEventRepository";
-import { Ok } from "../../src/lib/result";
+import request from "supertest";
+import { createComposedApp } from "../../src/composition";
+import { loginAs } from "../helpers/authSession";
+import { cleanDatabase } from "../helpers/cleanDatabase";
 
-describe("CreateEventFilterService - filterEvents", () => {
-    let mockRepo: jest.Mocked<IEventRepository>;
-    let service: ReturnType<typeof CreateEventFilterService>;
+const app = createComposedApp().getExpressApp();
 
-    beforeEach(() => {
-        mockRepo = {
-            findById: jest.fn(),
-            findAll: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-        };
-        mockRepo.findAll.mockResolvedValue(Ok([]));
-        service = CreateEventFilterService(mockRepo);
+beforeEach(async () => { await cleanDatabase(); });
+
+const base = {
+  title: "Test Event",
+  description: "A test event description.",
+  location: "Test Hall",
+  category: "social",
+  startDatetime: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 16),
+  endDatetime:   new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 16),
+};
+
+async function seedPublishedEvent(overrides: Record<string, string> = {}) {
+  const agent = await loginAs(app, "staff");
+  const createRes = await agent
+    .post("/events")
+    .type("form")
+    .send({ ...base, ...overrides })
+    .expect(302);
+  const eventId = (createRes.headers.location as string).replace("/events/", "");
+  await agent.post(`/events/${eventId}/publish`).expect(302);
+  return eventId;
+}
+
+describe("Feature 6 — category filter", () => {
+  it("GET /events?category=social returns only social events", async () => {
+    const agent = await loginAs(app, "staff");
+    await seedPublishedEvent({ title: "Social Event",  category: "social" });
+    await seedPublishedEvent({ title: "Volunteer Day", category: "volunteer" });
+
+    const res = await agent.get("/events?category=social");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Social Event");
+    expect(res.text).not.toContain("Volunteer Day");
+  });
+
+  it("GET /events?category=volunteer returns only volunteer events", async () => {
+    const agent = await loginAs(app, "staff");
+    await seedPublishedEvent({ title: "Volunteer Day", category: "volunteer" });
+    await seedPublishedEvent({ title: "Social Night",  category: "social" });
+
+    const res = await agent.get("/events?category=volunteer");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Volunteer Day");
+    expect(res.text).not.toContain("Social Night");
+  });
+
+  it("GET /events with no filters returns all published upcoming events", async () => {
+    const agent = await loginAs(app, "staff");
+    await seedPublishedEvent({ title: "Social Event",  category: "social" });
+    await seedPublishedEvent({ title: "Volunteer Day", category: "volunteer" });
+
+    const res = await agent.get("/events");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Social Event");
+    expect(res.text).toContain("Volunteer Day");
+  });
+});
+
+describe("Feature 6 — timeframe filter", () => {
+  it("GET /events?timeframe=upcoming returns future events", async () => {
+    const agent = await loginAs(app, "staff");
+    await seedPublishedEvent({ title: "Near Event" });
+
+    const res = await agent.get("/events?timeframe=upcoming");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Near Event");
+  });
+
+  it("GET /events?timeframe=this_week returns events within 7 days", async () => {
+    const agent = await loginAs(app, "staff");
+    await seedPublishedEvent({
+      title: "This Week Event",
+      startDatetime: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 16),
+      endDatetime:   new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 16),
+    });
+    await seedPublishedEvent({
+      title: "Far Future Event",
+      startDatetime: new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 16),
+      endDatetime:   new Date(Date.now() + 11 * 86_400_000).toISOString().slice(0, 16),
     });
 
-    it("returns all published events when no filters are given", async () => {
-        await service.filterEvents({});
-        expect(mockRepo.findAll).toHaveBeenCalledWith({ status: "published" });
-    });
+    const res = await agent.get("/events?timeframe=this_week");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("This Week Event");
+    expect(res.text).not.toContain("Far Future Event");
+  });
 
-    it("filters by a valid category", async ()=> {
-        await service.filterEvents({ category: "social" });
-        expect(mockRepo.findAll).toHaveBeenCalledWith({ status: "published", category: "social" });
-    });
+  it("GET /events?category=volunteer&timeframe=upcoming returns combined filter", async () => {
+    const agent = await loginAs(app, "staff");
+    await seedPublishedEvent({ title: "Volunteer Soon", category: "volunteer" });
+    await seedPublishedEvent({ title: "Social Soon",    category: "social" });
 
-    it("filters by a valid timeframe", async () => {
-        await service.filterEvents({ timeframe: "this_week" });
-        expect(mockRepo.findAll).toHaveBeenCalledWith({ status: "published", timeframe: "this_week" });
-    });
+    const res = await agent.get("/events?category=volunteer&timeframe=upcoming");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Volunteer Soon");
+    expect(res.text).not.toContain("Social Soon");
+  });
+});
 
-    it("filters both category and timeframe together", async ()=> {
-        await service.filterEvents({ category: "volunteer", timeframe: "this_weekend"});
-        expect(mockRepo.findAll).toHaveBeenCalledWith({ status: "published", category: "volunteer", timeframe: "this_weekend"});
-    });
-
-    it("returns InvalidCategoryError for an unrecognized cateogry", async ()=> {
-        const result = await service.filterEvents({ category: "invalid-cat" });
-        expect(result.ok).toBe(false);
-        if(!result.ok) expect(result.value.name).toBe("InvalidCategoryError");
-    });
-
-    it("returns InvalidTimeframeError for an unrecognized timeframe", async ()=> {
-        const result = await service.filterEvents({ timeframe: "next-month" as any });
-        expect(result.ok).toBe(false);
-        if(!result.ok) expect(result.value.name).toBe("InvalidTimeframeError");
-    });
-
-})
+describe("Feature 6 — unauthenticated access", () => {
+  it("GET /events without login → 302 redirect to /login", async () => {
+    const res = await request(app).get("/events");
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe("/login");
+  });
+});

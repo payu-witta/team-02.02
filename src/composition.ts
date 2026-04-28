@@ -30,9 +30,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // Shared event repository using Prisma
-  const eventRepo = CreatePrismaEventRepository(getPrismaClient());
-  const rsvpRepo = CreatePrismaRsvpRepository(getPrismaClient());
+
+  // Shared prisma-backed repository
+  const prisma = getPrismaClient();
+  const eventRepo = CreatePrismaEventRepository(prisma);
+  const rsvpRepo = CreatePrismaRsvpRepository(prisma);
 
   // Event wiring (Features 1 & 3)
 
@@ -48,7 +50,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const myRsvpsService = CreateMyRsvpsService(rsvpRepo, eventRepo);
   const myRsvpsController = CreateMyRsvpsController(myRsvpsService, resolvedLogger);
 
-  return CreateApp(authController, rsvpController, eventController, eventFilterService,eventDetailController, myRsvpsController, resolvedLogger);
+  return CreateApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, myRsvpsController, resolvedLogger);
 
 }
 
