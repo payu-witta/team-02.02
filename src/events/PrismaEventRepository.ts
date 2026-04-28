@@ -80,20 +80,19 @@ class PrismaEventRepository implements IEventRepository {
       }
     }
 
-    let rows = await this.prisma.event.findMany({
+    if (filters?.search !== undefined) {
+      const term = filters.search;
+      where.OR = [
+        { title:       { contains: term } },
+        { description: { contains: term } },
+        { location:    { contains: term } },
+      ];
+    }
+
+    const rows = await this.prisma.event.findMany({
       where,
       orderBy: { startDatetime: "asc" },
     });
-
-    if (filters?.search !== undefined) {
-      const term = filters.search.toLowerCase();
-      rows = rows.filter(
-        (r) =>
-          r.title.toLowerCase().includes(term) ||
-          r.description.toLowerCase().includes(term) ||
-          r.location.toLowerCase().includes(term),
-      );
-    }
 
     return Ok(rows.map(toEvent));
   }
