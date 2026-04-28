@@ -1,6 +1,4 @@
 import type { UserRole } from "../auth/User";
-//import type { Event } from "./Event";
-//import type { Rsvp } from "../rsvp/Rsvp";
 import type { Event, IEventRepository } from "./InEventRepository";
 import type { Rsvp, IRsvpRepository } from "../rsvp/InRsvpRepository";
 import { Err, Ok, type Result } from "../lib/result";
