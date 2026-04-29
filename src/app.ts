@@ -297,6 +297,20 @@ private readonly authController: IAuthController,
       }),
     );
 
+        // ── Feature 6: event list filters (category + timeframe) ───────
+
+        this.app.get(
+          "/events",
+          asyncHandler(async (req, res) => {
+            if (!this.requireAuthenticated(req, res)) return;
+            const session = recordPageView(sessionStore(req));
+            const category = typeof req.query.category === "string" ? req.query.category : undefined;
+            const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
+            this.logger.info(`GET /events?category=${category}&timeframe=${timeframe}`);
+            await this.eventController.filterEvents(res, category, timeframe, session);
+          }),
+        );
+
     //Feature 10 - Event Search (Sprint 1)
     this.app.get(
       "/events/search",
@@ -404,19 +418,6 @@ private readonly authController: IAuthController,
       }),
     );
 
-    // ── Feature 6: event list filters (category + timeframe) ───────
-
-    this.app.get(
-      "/events",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        const session = recordPageView(sessionStore(req));
-        const category = typeof req.query.category === "string" ? req.query.category : undefined;
-        const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
-        this.logger.info(`GET /events?category=${category}&timeframe=${timeframe}`);
-        await this.eventController.filterEvents(res, category, timeframe, session);
-      }),
-    );
 
     // ── Error handler ────────────────────────────────────────────────
 
