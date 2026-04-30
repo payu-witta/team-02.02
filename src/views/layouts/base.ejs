@@ -19,10 +19,17 @@
             const diffHours = Math.round(diffMs / 3600000);
             const diffDays = Math.round(diffMs / 86400000);
 
+            const sameDay =
+              target.getFullYear() === now.getFullYear() &&
+              target.getMonth() === now.getMonth() &&
+              target.getDate() === now.getDate();
+
             if (diffMs < 0) {
               this.label = "";
             } else if (diffMins < 60) {
               this.label = diffMins <= 1 ? "in a moment" : `in ${diffMins} minutes`;
+            } else if (sameDay) {
+              this.label = "today";
             } else if (diffHours < 24) {
               this.label = diffHours === 1 ? "in 1 hour" : `in ${diffHours} hours`;
             } else if (diffDays === 1) {
