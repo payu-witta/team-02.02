@@ -1,4 +1,5 @@
 <div id="rsvp-button-<%= eventId %>">
+  <div id="rsvp-error-<%= eventId %>"></div>
   <% if (!rsvp || rsvp.status === "cancelled") { %>
     <form
       hx-post="/events/<%= eventId %>/rsvp"
