@@ -5,11 +5,12 @@ import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
-import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
+import { CreatePrismaEventRepository } from "./events/PrismaEventRepository";
 import { CreateEventService } from "./events/EventService";
 import { CreateEventFilterService } from "./events/EventService";
 import { CreateEventController } from "./events/EventController";
-import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
+import { CreatePrismaRsvpRepository } from "./rsvp/PrismaRsvpRepository";
+import { getPrismaClient } from "./lib/prisma";
 import { CreateRsvpService } from "./rsvp/RsvpService";
 import { CreateRsvpController } from "./rsvp/RsvpController";
 import { CreateLoggingService } from "./service/LoggingService";
@@ -29,9 +30,10 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // Shared event repository
-  const eventRepo = CreateInMemoryEventRepository();
-  const rsvpRepo = CreateInMemoryRsvpRepository();
+  // Shared prisma-backed repository
+  const prisma = getPrismaClient();
+  const eventRepo = CreatePrismaEventRepository(prisma);
+  const rsvpRepo = CreatePrismaRsvpRepository(prisma);
 
   // Event wiring (Features 1 & 3)
 
@@ -47,7 +49,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const myRsvpsService = CreateMyRsvpsService(rsvpRepo, eventRepo);
   const myRsvpsController = CreateMyRsvpsController(myRsvpsService, resolvedLogger);
 
-  return CreateApp(authController, rsvpController, eventController, eventFilterService,eventDetailController, myRsvpsController, resolvedLogger);
+  return CreateApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, myRsvpsController, resolvedLogger);
 
 }
 

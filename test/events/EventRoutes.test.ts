@@ -1,5 +1,6 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import { cleanDatabase } from "../helpers/cleanDatabase";
 
 describe("Event Routing Sprint 2", () => {
   let app: any;
@@ -9,6 +10,7 @@ describe("Event Routing Sprint 2", () => {
   let testEventId: string;
 
   beforeAll(async () => {
+    await cleanDatabase();
     app = createComposedApp().getExpressApp();
 
     // 1. Log in Admin
