@@ -38,7 +38,7 @@
         <dt class="text-slate-500 font-medium">Starts</dt>
         <dd
           class="text-slate-800"
-          x-data="relativeTime('<%= event.startDatetime.toISOString() %>')"
+          x-data="relativeTime('<%= event.startDatetime.toISOString() %>', 'starting soon')"
         >
           <%= event.startDatetime.toLocaleString() %>
           <span
@@ -52,7 +52,7 @@
         <dt class="text-slate-500 font-medium">Ends</dt>
         <dd
           class="text-slate-800"
-          x-data="relativeTime('<%= event.endDatetime.toISOString() %>')"
+          x-data="relativeTime('<%= event.endDatetime.toISOString() %>', 'ending soon')"
         >
           <%= event.endDatetime.toLocaleString() %>
           <span

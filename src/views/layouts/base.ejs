@@ -8,7 +8,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script>
-      function relativeTime(isoString) {
+      function relativeTime(isoString, nearLabel = "starting soon") {
         return {
           label: "",
           init() {
@@ -27,7 +27,7 @@
             if (diffMs < 0) {
               this.label = "";
             } else if (diffMins < 60) {
-              this.label = diffMins <= 1 ? "in a moment" : `in ${diffMins} minutes`;
+              this.label = nearLabel;
             } else if (sameDay) {
               this.label = "today";
             } else if (diffHours < 24) {
