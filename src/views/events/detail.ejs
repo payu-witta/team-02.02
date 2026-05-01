@@ -36,11 +36,31 @@
     <dl class="grid gap-3 text-sm">
       <div class="grid grid-cols-[120px_1fr] gap-2">
         <dt class="text-slate-500 font-medium">Starts</dt>
-        <dd class="text-slate-800"><%= event.startDatetime.toLocaleString() %></dd>
+        <dd
+          class="text-slate-800"
+          x-data="relativeTime('<%= event.startDatetime.toISOString() %>', 'starting soon')"
+        >
+          <%= event.startDatetime.toLocaleString() %>
+          <span
+            x-show="label"
+            x-text="label"
+            class="ml-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full"
+          ></span>
+        </dd>
       </div>
       <div class="grid grid-cols-[120px_1fr] gap-2">
         <dt class="text-slate-500 font-medium">Ends</dt>
-        <dd class="text-slate-800"><%= event.endDatetime.toLocaleString() %></dd>
+        <dd
+          class="text-slate-800"
+          x-data="relativeTime('<%= event.endDatetime.toISOString() %>', 'ending soon')"
+        >
+          <%= event.endDatetime.toLocaleString() %>
+          <span
+            x-show="label"
+            x-text="label"
+            class="ml-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full"
+          ></span>
+        </dd>
       </div>
       <div class="grid grid-cols-[120px_1fr] gap-2">
         <dt class="text-slate-500 font-medium">Location</dt>
