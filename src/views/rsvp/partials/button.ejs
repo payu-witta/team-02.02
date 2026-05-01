@@ -1,9 +1,11 @@
 <div id="rsvp-button-<%= eventId %>">
+  <div id="rsvp-error-<%= eventId %>"></div>
   <% if (!rsvp || rsvp.status === "cancelled") { %>
     <form
       hx-post="/events/<%= eventId %>/rsvp"
       hx-target="#rsvp-button-<%= eventId %>"
       hx-swap="outerHTML"
+      hx-on:htmx:response-error="document.getElementById('rsvp-error-<%= eventId %>').innerHTML = event.detail.xhr.responseText"
     >
       <button
         type="submit"
@@ -22,6 +24,7 @@
         hx-post="/events/<%= eventId %>/rsvp"
         hx-target="#rsvp-button-<%= eventId %>"
         hx-swap="outerHTML"
+        hx-on:htmx:response-error="document.getElementById('rsvp-error-<%= eventId %>').innerHTML = event.detail.xhr.responseText"
       >
         <button
           type="submit"
@@ -41,6 +44,7 @@
         hx-post="/events/<%= eventId %>/rsvp"
         hx-target="#rsvp-button-<%= eventId %>"
         hx-swap="outerHTML"
+        hx-on:htmx:response-error="document.getElementById('rsvp-error-<%= eventId %>').innerHTML = event.detail.xhr.responseText"
       >
         <button
           type="submit"
