@@ -33,8 +33,13 @@
       checkDirty() {
         const fields = this.$el.querySelectorAll('input, textarea, select');
         this.isDirty = Array.from(fields).some(f => f.value !== this.snapshot[f.name]);
+      },
+      submit() {
+        this.isDirty = false;
       }
     }"
+    x-on:submit="submit"
+    x-on:beforeunload.window="if (isDirty) $event.preventDefault()"
   >
 
     <div
