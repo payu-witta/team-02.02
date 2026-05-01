@@ -21,6 +21,20 @@
     hx-post="/events/<%= event.id %>/edit"
     hx-target="#edit-form-section"
     hx-swap="outerHTML"
+    x-data="{
+      isDirty: false,
+      snapshot: {},
+      init() {
+        const fields = this.$el.querySelectorAll('input, textarea, select');
+        fields.forEach(f => { this.snapshot[f.name] = f.value; });
+        this.$el.addEventListener('input', () => this.checkDirty());
+        this.$el.addEventListener('change', () => this.checkDirty());
+      },
+      checkDirty() {
+        const fields = this.$el.querySelectorAll('input, textarea, select');
+        this.isDirty = Array.from(fields).some(f => f.value !== this.snapshot[f.name]);
+      }
+    }"
   >
 
     <div class="grid gap-1.5">
