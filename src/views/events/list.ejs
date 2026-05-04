@@ -1,18 +1,20 @@
 <div id="event-list-page">
 
   <%# Search input - Feature 10 %>
-  <input 
-    type="search"
-    name="q"
-    value="<%= typeof query !== 'undefined' ? query : '' %>"
-    placeholder="Search events..."
-    hx-get="/events/search"
-    hx-trigger="input changed delay:300ms"
-    hx-target="#event-list-page"
-    hx-swap="outerHTML"
-    hx-push-url="true"
-    class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white shadow-sm mb-4"
-  />
+  <div class="relative mb-6">
+    <input 
+      type="search"
+      name="q"
+      value="<%= typeof query !== 'undefined' ? query : '' %>"
+      placeholder="Search events..."
+      hx-get="/events/search"
+      hx-trigger="input changed delay:300ms"
+      hx-target="#event-list-page"
+      hx-swap="outerHTML"
+      hx-push-url="true"
+      class="w-full px-4 py-3 pr-10 rounded-xl border border-slate-200 bg-white shadow-sm"
+    />
+  </div>
 
   <%# Filter bar — Feature 6 %>  
   <form
