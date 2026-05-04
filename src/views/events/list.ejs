@@ -48,6 +48,15 @@
       <option value="this_weekend" <%= timeframe === 'this_weekend' ? 'selected' : '' %>>This weekend</option>
     </select>
 
+    <a 
+      x-show="hasFilters"
+      x-transition
+      href="/events"
+      class="ml-auto px-3 py-2 rounded-lg boarder boarder-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
+      >
+      Clear filters
+    </a>
+  
     <noscript>
       <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Apply</button>
     </noscript>
