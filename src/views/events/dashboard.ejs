@@ -12,7 +12,7 @@
 
   <% statusGroups.forEach(group => { %>
     <section 
-      class="p-5 border <%= group.border %> rounded-2xl <%= group.bg %> shadow-sm transition-all"
+      class="p-5 border <%= group.border %> rounded-2xl <%= group.bg %> shadow-sm transition-all min-h-[160px] flex flex-col"
       <% if (group.key === 'archived') { %> x-data="{ expanded: false }" <% } %>
     >
       <div class="flex items-center justify-between mb-4">
