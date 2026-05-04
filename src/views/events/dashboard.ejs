@@ -5,24 +5,17 @@
 
 <div class="grid gap-5 md:grid-cols-3">
   <% const statusGroups = [
-      { key: 'published', label: 'Published', color: 'text-green-700' },
-      { key: 'draft', label: 'Draft', color: 'text-slate-700' },
-      { key: 'archived', label: 'Past', color: 'text-red-700' }
+    { key: 'published', label: 'Published', color: 'text-green-700', bg: 'bg-green-50/50', border: 'border-green-100' },
+    { key: 'draft', label: 'Drafts', color: 'text-slate-700', bg: 'bg-slate-50/50', border: 'border-slate-100' },
+    { key: 'archived', label: 'Past & Cancelled', color: 'text-rose-700', bg: 'bg-rose-50/50', border: 'border-rose-100' }
   ]; %>
 
   <% statusGroups.forEach(group => { %>
-    <section class="p-5 border border-slate-200 rounded-2xl bg-white shadow-lg">
-      <h2 class="text-lg font-semibold mb-3 <%= group.color %>"><%= group.label %></h2>
-      
-      <% if (groups[group.key].length === 0) { %>
-        <p class="text-sm text-slate-500 italic">No <%= group.key %> events.</p>
-      <% } else { %>
-        <ul class="space-y-3">
-          <% groups[group.key].forEach((event) => { %>
-            <%- include('./partials/dashboard-item', { event: event }) %>
-          <% }) %>
-        </ul>
-      <% } %>
+    <section class="p-5 border <%= group.border %> rounded-2xl <%= group.bg %> shadow-sm transition-all">
+    <h2 class="text-lg font-bold <%= group.color %> uppercase tracking-tight mb-4">
+      <%= group.label %> 
+      <span class="ml-1 text-sm font-normal opacity-60">(<%= groups[group.key].length %>)</span>
+    </h2>
     </section>
   <% }) %>
 </div>
