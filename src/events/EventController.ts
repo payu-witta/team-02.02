@@ -307,7 +307,13 @@ class EventController implements IEventController {
       res.status(400).render("partials/error", { message: result.value.message, layout: false });
       return;
     }
-    res.render("events/list", { session, events: result.value, category, timeframe });
+    res.render("events/list", {
+      session, 
+      events: result.value, 
+      query: undefined,
+      category: undefined, 
+      timeframe: undefined
+   });
   }
 
   async searchEvents(
