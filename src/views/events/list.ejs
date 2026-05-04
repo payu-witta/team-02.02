@@ -16,18 +16,19 @@
 
   <%# Filter bar — Feature 6 %>  
   <form
-    action="/events"
+    x-data="{ category: '<%= category ?? '' %>', timeframe: '<%= timeframe ?? '' %>' }"
+    action="/events/"
     method="GET"
     hx-get="/events"
-    hx-target="#event-list-page"
+    hx-target=""#event-list-page"
     hx-swap="outerHTML"
     hx-push-url="true"
-    class="flex gap-3 mb-6"
+    class="flex flex-wrap items-center gap-3 mb-6 p-3 rounded-x1 boarder boarder-slate-200 bg-white shadow-sm"
   >
     <select
       name="category"
       hx-trigger="change"
-      class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+      class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <option value="">All categories</option>
       <option value="social"      <%= category === 'social'      ? 'selected' : '' %>>Social</option>
@@ -40,7 +41,7 @@
     <select
       name="timeframe"
       hx-trigger="change"
-      class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+      class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <option value="upcoming"     <%= timeframe === 'upcoming'     ? 'selected' : '' %>>All upcoming</option>
       <option value="this_week"    <%= timeframe === 'this_week'    ? 'selected' : '' %>>This week</option>
