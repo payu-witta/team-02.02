@@ -6,8 +6,53 @@
     <title>Project Starter</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <style>[x-cloak] { display: none !important; }</style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+      // Manual test checklist for relativeTime(isoString, nearLabel):
+      // - Past event (startDatetime in the past)      → no label shown
+      // - Event starting within 60 min               → "starting soon" / "ending soon"
+      // - Event starting later today (> 60 min away) → "today"
+      // - Event starting tomorrow                    → "tomorrow"
+      // - Event starting in 3 days                   → "in 3 days"
+      // - Event starting in 8+ days                  → no label shown
+      // - End date within 60 min of now              → "ending soon"
+      function relativeTime(isoString, nearLabel = "starting soon") {
+        return {
+          label: "",
+          init() {
+            const target = new Date(isoString);
+            const now = new Date();
+            const diffMs = target - now;
+            const diffMins = Math.round(diffMs / 60000);
+            const diffHours = Math.round(diffMs / 3600000);
+            const diffDays = Math.round(diffMs / 86400000);
+
+            const sameDay =
+              target.getFullYear() === now.getFullYear() &&
+              target.getMonth() === now.getMonth() &&
+              target.getDate() === now.getDate();
+
+            if (diffMs < 0) {
+              this.label = "";
+            } else if (diffMins < 60) {
+              this.label = nearLabel;
+            } else if (sameDay) {
+              this.label = "today";
+            } else if (diffHours < 24) {
+              this.label = diffHours === 1 ? "in 1 hour" : `in ${diffHours} hours`;
+            } else if (diffDays === 1) {
+              this.label = "tomorrow";
+            } else if (diffDays < 7) {
+              this.label = `in ${diffDays} days`;
+            } else {
+              this.label = "";
+            }
+          },
+        };
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-900 p-6">
     <div class="max-w-5xl mx-auto">
