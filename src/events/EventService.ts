@@ -277,8 +277,8 @@ export class EventService implements IEventService {
   
     return this.eventRepo.findAll({
       status: "published",
+      timeframe: input.timeframe ?? "upcoming",
       ...(input.category ? { category: input.category } : {}),
-      ...(input.timeframe ? { timeframe: input.timeframe } : {}),
     });
   }
 

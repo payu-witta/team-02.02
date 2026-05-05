@@ -308,12 +308,12 @@ class EventController implements IEventController {
       return;
     }
     res.render("events/list", {
-      session, 
-      events: result.value, 
+      session,
+      events: result.value,
       query: undefined,
-      category: undefined, 
-      timeframe: undefined
-   });
+      category: category ?? "",
+      timeframe: timeframe ?? "upcoming",
+    });
   }
 
   async searchEvents(
