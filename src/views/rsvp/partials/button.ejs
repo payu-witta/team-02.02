@@ -73,7 +73,21 @@
         </form>
       </div>
       <% if (waitlistPosition !== null) { %>
-        <p class="text-sm text-amber-700 font-medium">Queue position: #<%= waitlistPosition %></p>
+        <div class="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-amber-300 shadow-sm">
+          <div class="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500 text-white font-bold text-base flex-shrink-0">
+            <%= waitlistPosition %>
+          </div>
+          <div class="leading-tight">
+            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide">Queue Position</p>
+            <p class="text-sm text-slate-700 font-medium">
+              <% if (waitlistPosition === 1) { %>
+                You're next in line!
+              <% } else { %>
+                <%= waitlistPosition - 1 %> <%= waitlistPosition - 1 === 1 ? 'person' : 'people' %> ahead of you
+              <% } %>
+            </p>
+          </div>
+        </div>
       <% } %>
     </div>
   <% } %>
