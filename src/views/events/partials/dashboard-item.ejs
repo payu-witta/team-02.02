@@ -1,40 +1,40 @@
-<li id="dash-item-<%= event.id %>" class="p-3 border border-slate-100 rounded-xl bg-slate-50/50">
+<li id="dash-item-<%= event.id %>" 
+    class="relative overflow-hidden p-3 pl-5 border border-slate-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+  
+  <div class="absolute left-0 top-0 bottom-0 w-1.5 
+    <%= event.status === 'published' ? 'bg-green-500' : event.status === 'draft' ? 'bg-slate-400' : 'bg-rose-500' %>">
+  </div>
+
   <div class="flex justify-between items-start mb-2">
     <div>
-      <a href="/events/<%= event.id %>" class="font-bold text-slate-900 no-underline hover:text-blue-700 block text-base">
+      <a href="/events/<%= event.id %>" class="font-bold text-slate-900 no-underline hover:text-blue-700 block text-base truncate max-w-[180px]">
         <%= event.title %>
       </a>
-      <div class="text-xs text-slate-500 mt-1">
-        <span class="font-medium text-slate-700 capitalize"><%= event.category %></span> • 
-        <%= new Date(event.startDatetime).toLocaleDateString() %>
+      <div class="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-tighter">
+        <%= event.category %> • <%= new Date(event.startDatetime).toLocaleDateString() %>
       </div>
     </div>
     
     <div class="flex gap-1">
       <% if (event.status === 'draft') { %>
-        <button hx-post="/events/<%= event.id %>/publish?context=dashboard" 
-                hx-target="#dash-item-<%= event.id %>" 
-                hx-swap="outerHTML"
-                class="text-[10px] uppercase tracking-wider font-bold px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+        <button hx-post="/events/<%= event.id %>/publish?context=dashboard" hx-target="#dash-item-<%= event.id %>" hx-swap="outerHTML"
+                class="text-[9px] uppercase font-black px-2 py-1 bg-green-600 text-white rounded shadow-sm hover:bg-green-700">
           Publish
         </button>
       <% } %>
 
       <% if (event.status === 'published') { %>
-        <button hx-post="/events/<%= event.id %>/cancel?context=dashboard" 
-                hx-target="#dash-item-<%= event.id %>" 
-                hx-swap="outerHTML"
-                hx-confirm="Cancel this event?"
-                class="text-[10px] uppercase tracking-wider font-bold px-2 py-1 bg-white border border-red-200 text-red-600 rounded hover:bg-red-50">
+        <button hx-post="/events/<%= event.id %>/cancel?context=dashboard" hx-target="#dash-item-<%= event.id %>" hx-swap="outerHTML" hx-confirm="Cancel this event?"
+                class="text-[9px] uppercase font-black px-2 py-1 bg-white border border-rose-200 text-rose-600 rounded hover:bg-rose-50">
           Cancel
         </button>
       <% } %>
     </div>
   </div>
 
-  <div class="flex items-center justify-between text-xs mt-3 pt-2 border-t border-slate-200/60">
-    <span class="text-slate-500 font-medium">Capacity</span>
-    <span class="text-slate-700 font-bold">
+  <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-slate-100">
+    <span class="text-slate-400 text-[10px] font-bold uppercase">Attendees</span>
+    <span class="text-slate-700 font-black">
       <%= event.attendeeCount %> / <%= event.capacity || '∞' %>
     </span>
   </div>
