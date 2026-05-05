@@ -16,7 +16,12 @@
     
     <div>
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= statusColors[event.status] %>">
+        <span 
+            x-data="{ show: false }" 
+            x-init="setTimeout(() => show = true, 50)"
+            :class="show ? 'scale-100 opacity-100' : 'scale-90 opacity-0'"
+            class="transform transition-all duration-500 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border <%= statusColors[event.status] %>"
+          >
           <%= event.status %>
         </span>
         <span class="text-xs text-slate-400 capitalize ml-2"><%= event.category %></span>
