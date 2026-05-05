@@ -73,8 +73,12 @@
         </form>
       </div>
       <% if (waitlistPosition !== null) { %>
-        <div class="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-amber-300 shadow-sm">
-          <div class="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500 text-white font-bold text-base flex-shrink-0">
+        <div
+          role="status"
+          aria-label="Waitlist position <%= waitlistPosition %>"
+          class="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-amber-300 shadow-sm"
+        >
+          <div class="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500 text-white font-bold text-base flex-shrink-0 <%= waitlistPosition === 1 ? 'ring-2 ring-amber-300 ring-offset-1 animate-pulse' : '' %>">
             <%= waitlistPosition %>
           </div>
           <div class="leading-tight">
