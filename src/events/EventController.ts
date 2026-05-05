@@ -324,11 +324,13 @@ class EventController implements IEventController {
     const result = await this.service.searchEvents({ query });
     if (result.ok === false) {
       this.logger.warn(`Search events failed: ${result.value.message}`);
-      res.status(500).render("events/search", { 
-        session, 
-        pageError: result.value.message, 
-        events: [], 
-        query, 
+      res.status(400).render("events/list", {
+        session,
+        events: [],
+        query,
+        pageError: result.value.message,
+        category: undefined,
+        timeframe: undefined,
       });
       return;
     }

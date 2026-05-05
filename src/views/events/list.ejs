@@ -1,32 +1,66 @@
 <div id="event-list-page">
 
+  <% if (typeof pageError !== 'undefined' && pageError) { %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+      <%= pageError %>
+    </div>
+  <% } %>
+
   <%# Search input - Feature 10 %>
-  <input 
-    type="search"
-    name="q"
-    value="<%= typeof query !== 'undefined' ? query : '' %>"
-    placeholder="Search events..."
+  <form
+    x-data='{ query: "<%= typeof query !== "undefined" ? query : "" %>" }'
+    action="/events/search"
+    method="GET"
     hx-get="/events/search"
-    hx-trigger="input changed delay:300ms"
+    hx-trigger="input changed delay:300ms from:find input[name='query'], submit"
     hx-target="#event-list-page"
+    hx-select="#event-list-page"
     hx-swap="outerHTML"
     hx-push-url="true"
-    class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white shadow-sm mb-4"
-  />
+    class="relative mb-6"
+  >
+    <input
+      type="text"
+      name="query"
+      x-model="query"
+      placeholder="Search events..."
+      class="w-full px-4 py-3 pr-12 rounded-xl border border-slate-300 bg-white shadow-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+
+    <button
+      type="button"
+      x-show="query.length > 0"
+      x-transition
+      @click="
+      query = '';
+      htmx.ajax('GET', '/events', {
+        target: '#event-list-page',
+        swap: 'outerHTML',
+        select: '#event-list-page',
+        headers: { 'HX-Push-Url': '/events' }
+      })
+      "      
+      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 z-10"
+      aria-label="Clear search"
+    >
+      ✕
+    </button>
+  </form>
 
   <%# Filter bar — Feature 6 %>  
   <form
-    x-data="{
-      category: '<%= category || '' %>',
-      timeframe: '<%= timeframe || 'upcoming' %>',
+    x-data='{
+      category: "<%= category || "" %>",
+      timeframe: "<%= timeframe || "upcoming" %>",
       get hasFilters() {
-        return this.category !== '' || this.timeframe !== 'upcoming'
-      }
-    }"
+          return this.category !== "" || this.timeframe !== "upcoming"
+        }
+    }'
     action="/events"
     method="GET"
     hx-get="/events"
     hx-target="#event-list-page"
+    hx-select="#event-list-page"
     hx-swap="outerHTML"
     hx-push-url="true"
     class="flex flex-wrap items-center gap-3 mb-6 p-3 rounded-xl border border-slate-200 bg-white shadow-sm"
@@ -60,7 +94,7 @@
       x-show="hasFilters"
       x-transition
       href="/events"
-      class="ml-auto px-3 py-2 rounded-lg boarder boarder-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
+      class="ml-auto px-3 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
       >
       Clear filters
     </a>
