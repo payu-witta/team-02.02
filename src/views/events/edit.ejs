@@ -39,7 +39,7 @@
       }
     }"
     x-on:submit="submit"
-    x-on:beforeunload.window="if (isDirty) $event.preventDefault()"
+    x-on:beforeunload.window="if (isDirty) { $event.preventDefault(); $event.returnValue = ''; }"
   >
 
     <div
