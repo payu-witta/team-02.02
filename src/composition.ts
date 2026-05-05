@@ -30,6 +30,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
+
   // Shared prisma-backed repository
   const prisma = getPrismaClient();
   const eventRepo = CreatePrismaEventRepository(prisma);

@@ -7,6 +7,10 @@ import type { ILoggingService } from "../../src/service/LoggingService";
 import { CreateMyRsvpsService } from "../../src/rsvp/MyRsvpsService";
 import { CreateMyRsvpsController } from "../../src/rsvp/MyRsvpsController";
 
+import { getPrismaClient } from "../../src/lib/prisma";
+import { CreatePrismaRsvpRepository } from "../../src/rsvp/PrismaRsvpRepository";
+import { CreatePrismaEventRepository } from "../../src/events/PrismaEventRepository";
+
 
 function createLoggerMock(): ILoggingService {
   return {
@@ -491,6 +495,6 @@ describe("MyRsvpsService", () =>{
     await controller.showMyRsvps(req, res);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith("Bad");
+    expect(res.send).toHaveBeenCalledWith("Forbidden");
   });
 })
