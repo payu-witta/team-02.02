@@ -8,11 +8,11 @@
 
   <%# Search input - Feature 10 %>
   <form
-    x-data='{ "query": "<%= typeof query !== "undefined" ? query : "" %>" }'
+    x-data='{ query: "<%= typeof query !== "undefined" ? query : "" %>" }'
     action="/events/search"
     method="GET"
     hx-get="/events/search"
-    hx-trigger="input changed delay: 300ms from: find input[name='query'],submit"
+    hx-trigger="input changed delay:300ms from:find input[name='query'], submit"
     hx-target="#event-list-page"
     hx-select="#event-list-page"
     hx-swap="outerHTML"
@@ -49,9 +49,9 @@
   <%# Filter bar — Feature 6 %>  
   <form
     x-data='{
-      "category": "<%= category || "" %>",
-      "timeframe": "<%= timeframe || "upcoming" %>",
-      "get hasFilters"() {
+      category: "<%= category || "" %>",
+      timeframe: "<%= timeframe || "upcoming" %>",
+      get hasFilters() {
           return this.category !== "" || this.timeframe !== "upcoming"
         }
     }'
@@ -92,7 +92,7 @@
       x-show="hasFilters"
       x-transition
       href="/events"
-      class="ml-auto px-3 py-2 rounded-lg boarder boarder-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
+      class="ml-auto px-3 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
       >
       Clear filters
     </a>
