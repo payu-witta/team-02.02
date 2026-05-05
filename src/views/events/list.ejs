@@ -6,7 +6,7 @@
     action="/events/search"
     method="GET"
     hx-get="/events/search"
-    hx-trigger="submit"
+    hx-trigger="input changed delay: 300ms from: find input[name='query'],submit"
     hx-target="#event-list-page"
     hx-select="#event-list-page"
     hx-swap="outerHTML"
