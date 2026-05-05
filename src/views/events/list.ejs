@@ -1,5 +1,11 @@
 <div id="event-list-page">
 
+  <% if (typeof pageError !== 'undefined' && pageError) { %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+      <%= pageError %>
+    </div>
+  <% } %>
+
   <%# Search input - Feature 10 %>
   <form
     x-data="{ query: '<%= typeof query !== 'undefined' ? query : '' %>' }"
