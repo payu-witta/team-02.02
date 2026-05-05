@@ -25,7 +25,14 @@
       type="button"
       x-show="query.length > 0"
       x-transition
-      @click="query = ''; $nextTick(() => $el.closest('form').requestSubmit())"
+      @click="
+      query = '';
+      htmx.ajax('GET', '/events', {
+        target: '#event-list-page',
+        swap: 'outerHTML',
+        headers: { 'HX-Push-Url': '/events' }
+      })
+      "      
       class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 z-10"
       aria-label="Clear search"
     >
