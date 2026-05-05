@@ -7,7 +7,9 @@
 %>
 
 <%- include('./partials/header', { event: event, session: session }) %>
-
+<h1 class="text-3xl font-bold text-slate-900 mb-4 px-6">
+  <%= event.title %>
+</h1>
 <% if (canEdit) { %>
   <p>You can edit this event.</p>
 <% } %>
