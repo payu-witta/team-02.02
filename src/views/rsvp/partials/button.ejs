@@ -17,11 +17,12 @@
       hx-post="/events/<%= eventId %>/rsvp"
       hx-target="#rsvp-button-<%= eventId %>"
       hx-swap="outerHTML"
+      hx-disabled-elt="find button"
       hx-on:htmx:response-error="document.getElementById('rsvp-error-<%= eventId %>').innerHTML = event.detail.xhr.responseText"
     >
       <button
         type="submit"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait disabled:scale-100"
       >
         RSVP to this event
       </button>
@@ -37,11 +38,12 @@
         hx-post="/events/<%= eventId %>/rsvp"
         hx-target="#rsvp-button-<%= eventId %>"
         hx-swap="outerHTML"
+        hx-disabled-elt="find button"
         hx-on:htmx:response-error="document.getElementById('rsvp-error-<%= eventId %>').innerHTML = event.detail.xhr.responseText"
       >
         <button
           type="submit"
-          class="px-4 py-2 rounded-xl bg-white text-slate-600 border border-slate-200 font-medium text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 active:scale-95 transition-all cursor-pointer"
+          class="px-4 py-2 rounded-xl bg-white text-slate-600 border border-slate-200 font-medium text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait disabled:scale-100"
         >
           Cancel RSVP
         </button>
@@ -59,11 +61,12 @@
           hx-post="/events/<%= eventId %>/rsvp"
           hx-target="#rsvp-button-<%= eventId %>"
           hx-swap="outerHTML"
+          hx-disabled-elt="find button"
           hx-on:htmx:response-error="document.getElementById('rsvp-error-<%= eventId %>').innerHTML = event.detail.xhr.responseText"
         >
           <button
             type="submit"
-            class="px-4 py-2 rounded-xl bg-white text-slate-600 border border-slate-200 font-medium text-sm hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+            class="px-4 py-2 rounded-xl bg-white text-slate-600 border border-slate-200 font-medium text-sm hover:bg-slate-50 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait disabled:scale-100"
           >
             Leave Waitlist
           </button>
