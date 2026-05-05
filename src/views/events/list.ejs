@@ -36,6 +36,7 @@
       htmx.ajax('GET', '/events', {
         target: '#event-list-page',
         swap: 'outerHTML',
+        select: '#event-list-page',
         headers: { 'HX-Push-Url': '/events' }
       })
       "      
@@ -59,6 +60,7 @@
     method="GET"
     hx-get="/events"
     hx-target="#event-list-page"
+    hx-select="#event-list-page"
     hx-swap="outerHTML"
     hx-push-url="true"
     class="flex flex-wrap items-center gap-3 mb-6 p-3 rounded-xl border border-slate-200 bg-white shadow-sm"
