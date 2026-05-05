@@ -7,12 +7,17 @@
 %>
 
 <%- include('./partials/header', { event: event, session: session }) %>
-<h1 class="text-3xl font-bold text-slate-900 mb-4 px-6">
-  <%= event.title %>
-</h1>
-<% if (canEdit) { %>
-  <p>You can edit this event.</p>
-<% } %>
+<div class = "px-6">
+  <h1 class="text-3xl font-bold text-slate-900 mb-4 px-6">
+    <%= event.title %>
+  </h1>
+  <% if (canEdit) { %>
+    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+      You can edit or cancel this event.
+    </div>
+  <% } %>
+</div>
+
 
 <div class="flex flex-col gap-2 mb-6 px-6">
   <p class="text-sm text-slate-600">
