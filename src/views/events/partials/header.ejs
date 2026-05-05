@@ -1,10 +1,10 @@
 <%
   const statusColors = {
-    draft:     "bg-slate-100 text-slate-600 border-slate-200",
-    published: "bg-green-50 text-green-700 border-green-200",
-    cancelled: "bg-red-50 text-red-700 border-red-200",
-    past:      "bg-slate-100 text-slate-500 border-slate-200",
-  };
+  draft:     "bg-slate-100 text-slate-600 border-slate-200",
+  published: "bg-green-100 text-green-800 border-green-200 shadow-sm shadow-green-100",
+  cancelled: "bg-rose-100 text-rose-800 border-rose-200",
+  past:      "bg-slate-200 text-slate-600 border-slate-300",
+};
 
   const canManage = session.authenticatedUser && 
     (session.authenticatedUser.role === 'admin' || 
