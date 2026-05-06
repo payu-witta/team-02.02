@@ -96,7 +96,7 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Create event failed: ${result.value.message}`);
-      res.status(status).render("events/create", {
+      res.status(isHtmx ? 200 : status).render("events/create", {
         session,
         pageError: result.value.message,
         layout: isHtmx ? false : undefined,
