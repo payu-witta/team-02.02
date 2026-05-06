@@ -13,4 +13,32 @@
       { key: 'upcoming', label: 'Upcoming', color: 'text-blue-700', bg: 'bg-blue-50/50', border: 'border-blue-100' },
       { key: 'history', label: 'History', color: 'text-slate-700', bg: 'bg-slate-50/50', border: 'border-slate-100' }
     ]; %>
+
+  <% statusGroups.forEach(group => { %>
+    <section 
+      class="p-5 border <%= group.border %> rounded-2xl <%= group.bg %> shadow-sm transition-all min-h-[160px] flex flex-col"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold <%= group.color %> uppercase tracking-tight">
+          <%= group.label %> 
+          <span class="ml-1 text-sm font-normal opacity-60">(<%= groups[group.key].length %>)</span>
+        </h2>
+      </div>
+      
+      <div>
+        <% if (groups[group.key].length === 0) { %>
+          <p class="text-sm text-slate-400 italic py-4">No events in this category.</p>
+        <% } else { %>
+          <ul class="space-y-3">
+            <% groups[group.key].forEach(({ event, rsvp }) => { %>
+              <li class="p-4 border border-slate-200 rounded-xl bg-white shadow-sm">
+                <p class="font-semibold text-slate-900"><%= event.title %></p>
+                <p class="text-sm text-slate-500"><%= event.startDatetime.toLocaleString() %></p>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    </section>
+  <% }) %>
 </div>
