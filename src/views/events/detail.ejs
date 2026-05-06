@@ -7,8 +7,6 @@
 %>
 
 <%- include('./partials/header', { event: event, session: session }) %>
-
-
 <div class="flex flex-col gap-2 mb-6 px-6">
   <p class="text-sm text-slate-600">
     <strong>Attendee count:</strong> <%= attendeeCount %> / <%= event.capacity || 'No limit' %>
