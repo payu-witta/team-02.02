@@ -1,19 +1,4 @@
-<h1>My RSVPs</h1>
-
-<h2>upcoming</h2>
-<% if (upcoming.length === 0) { %>
-  <p>No RSVPs</p>
-<% } %>
-
-<% upcoming.forEach(({ event }) => { %>
-  <p><%= event.title %></p>
-<% }) %>
-
-<h2>history</h2>
-<% if (history.length === 0) { %>
-  <p>No RSVPs</p>
-<% } %>
-
-<% history.forEach(({ event }) => { %>
-  <p><%= event.title %></p>
-<% }) %>
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-1">My RSVPs</h1>
+  <p class="text-slate-500">Track your upcoming and past events.</p>
+</section>
