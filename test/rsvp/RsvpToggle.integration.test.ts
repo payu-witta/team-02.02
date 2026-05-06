@@ -42,7 +42,7 @@ describe("Feature 4 — RSVP Toggle: happy path", () => {
 
     expect(res.status).toBe(200);
     expect(res.text).toContain(`id="rsvp-button-${eventId}"`);
-    expect(res.text).toContain("Going");
+    expect(res.text).toContain("You're going!");
     expect(res.text).toContain("Cancel RSVP");
   });
 
@@ -306,7 +306,7 @@ describe("Feature 4 — RSVP GET status: happy path", () => {
     const res = await user.get(`/events/${eventId}/rsvp`);
 
     expect(res.status).toBe(200);
-    expect(res.text).toContain("Going");
+    expect(res.text).toContain("You're going!");
     expect(res.text).toContain("Cancel RSVP");
   });
 });
