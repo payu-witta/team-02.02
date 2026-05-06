@@ -42,7 +42,7 @@ describe("Feature 4 — RSVP Toggle: happy path", () => {
 
     expect(res.status).toBe(200);
     expect(res.text).toContain(`id="rsvp-button-${eventId}"`);
-    expect(res.text).toContain("Going");
+    expect(res.text).toContain("You're going!");
     expect(res.text).toContain("Cancel RSVP");
   });
 
@@ -138,11 +138,11 @@ describe("Feature 4 — RSVP Toggle: capacity enforcement and reactivation", () 
 
     const resA = await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
     expect(resA.status).toBe(200);
-    expect(resA.text).toContain("Going");
+    expect(resA.text).toContain("You're going!");
 
     const resB = await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
     expect(resB.status).toBe(200);
-    expect(resB.text).toContain("Waitlisted");
+    expect(resB.text).toContain("On waitlist");
   });
 
   it("cancelling going RSVP promotes the waitlisted member", async () => {
@@ -164,8 +164,8 @@ describe("Feature 4 — RSVP Toggle: capacity enforcement and reactivation", () 
 
     const resB = await userB.get(`/events/${eventId}/rsvp`);
     expect(resB.status).toBe(200);
-    expect(resB.text).toContain("Going");
-    expect(resB.text).not.toContain("Waitlisted");
+    expect(resB.text).toContain("You're going!");
+    expect(resB.text).not.toContain("On waitlist");
   });
 
   it("reactivating a cancelled RSVP on a full event lands on waitlist", async () => {
@@ -186,7 +186,7 @@ describe("Feature 4 — RSVP Toggle: capacity enforcement and reactivation", () 
 
     const resA = await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
     expect(resA.status).toBe(200);
-    expect(resA.text).toContain("Waitlisted");
+    expect(resA.text).toContain("On waitlist");
   });
 
   it("no capacity limit → all members RSVP as going", async () => {
@@ -204,8 +204,8 @@ describe("Feature 4 — RSVP Toggle: capacity enforcement and reactivation", () 
     const resA = await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
     const resB = await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
 
-    expect(resA.text).toContain("Going");
-    expect(resB.text).toContain("Going");
+    expect(resA.text).toContain("You're going!");
+    expect(resB.text).toContain("You're going!");
   });
 });
 
@@ -225,7 +225,7 @@ describe("Feature 9 — Waitlist promotion and queue positions", () => {
     await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
     const resB = await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
 
-    expect(resB.text).toContain("Waitlisted");
+    expect(resB.text).toContain("On waitlist");
     expect(resB.text).toContain("#1");
   });
 
@@ -254,10 +254,10 @@ describe("Feature 9 — Waitlist promotion and queue positions", () => {
     await userA.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
 
     const resB = await userB.get(`/events/${eventId}/rsvp`);
-    expect(resB.text).toContain("Going");
+    expect(resB.text).toContain("You're going!");
 
     const resC = await userC.get(`/events/${eventId}/rsvp`);
-    expect(resC.text).toContain("Waitlisted");
+    expect(resC.text).toContain("On waitlist");
     expect(resC.text).toContain("#1");
   });
 
@@ -279,7 +279,7 @@ describe("Feature 9 — Waitlist promotion and queue positions", () => {
     await userB.post(`/events/${eventId}/rsvp`).set("HX-Request", "true");
 
     const resA = await userA.get(`/events/${eventId}/rsvp`);
-    expect(resA.text).toContain("Going");
+    expect(resA.text).toContain("You're going!");
   });
 });
 
@@ -306,7 +306,7 @@ describe("Feature 4 — RSVP GET status: happy path", () => {
     const res = await user.get(`/events/${eventId}/rsvp`);
 
     expect(res.status).toBe(200);
-    expect(res.text).toContain("Going");
+    expect(res.text).toContain("You're going!");
     expect(res.text).toContain("Cancel RSVP");
   });
 });

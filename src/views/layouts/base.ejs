@@ -10,14 +10,6 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script>
-      // Manual test checklist for relativeTime(isoString, nearLabel):
-      // - Past event (startDatetime in the past)      → no label shown
-      // - Event starting within 60 min               → "starting soon" / "ending soon"
-      // - Event starting later today (> 60 min away) → "today"
-      // - Event starting tomorrow                    → "tomorrow"
-      // - Event starting in 3 days                   → "in 3 days"
-      // - Event starting in 8+ days                  → no label shown
-      // - End date within 60 min of now              → "ending soon"
       function relativeTime(isoString, nearLabel = "starting soon") {
         return {
           label: "",
