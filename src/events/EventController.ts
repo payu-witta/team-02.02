@@ -71,7 +71,7 @@ class EventController implements IEventController {
   }
 
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
-    res.render("events/create", { session, pageError: null });
+    res.render("events/create", { session, pageError: null, formValues: null });
   }
 
   async createFromForm(
@@ -99,6 +99,7 @@ class EventController implements IEventController {
       res.status(isHtmx ? 200 : status).render("events/create", {
         session,
         pageError: result.value.message,
+        formValues: body,
         layout: isHtmx ? false : undefined,
       });
       return;
