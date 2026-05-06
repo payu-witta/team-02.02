@@ -2,3 +2,15 @@
   <h1 class="text-3xl font-bold text-slate-900 mb-1">My RSVPs</h1>
   <p class="text-slate-500">Track your upcoming and past events.</p>
 </section>
+
+<div class="grid gap-5 lg:grid-cols-2 items-start">
+    <% const groups = {
+    upcoming: upcoming,
+    history: history
+    }; %>
+
+    <% const statusGroups = [
+      { key: 'upcoming', label: 'Upcoming', color: 'text-blue-700', bg: 'bg-blue-50/50', border: 'border-blue-100' },
+      { key: 'history', label: 'History', color: 'text-slate-700', bg: 'bg-slate-50/50', border: 'border-slate-100' }
+    ]; %>
+</div>
