@@ -81,6 +81,40 @@ describe("Feature 3 — Event Editing: invalid input", () => {
   });
 });
 
+describe("Feature 3 — Event Editing: HTMX validation errors", () => {
+  it("end before start via HTMX → 200 with error message in body", async () => {
+    const agent = await loginAs(app, "staff");
+    const eventId = await seedEvent(app, agent);
+
+    const res = await agent
+      .post(`/events/${eventId}/edit`)
+      .set("HX-Request", "true")
+      .type("form")
+      .send({
+        ...BASE_EVENT,
+        startDatetime: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 16),
+        endDatetime:   new Date(Date.now() + 86_400_000).toISOString().slice(0, 16),
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("End date/time must be after start date/time.");
+  });
+
+  it("title exceeding 100 characters via HTMX → 200 with error message in body", async () => {
+    const agent = await loginAs(app, "staff");
+    const eventId = await seedEvent(app, agent);
+
+    const res = await agent
+      .post(`/events/${eventId}/edit`)
+      .set("HX-Request", "true")
+      .type("form")
+      .send({ ...BASE_EVENT, title: "A".repeat(101) });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("100");
+  });
+});
+
 describe("Feature 3 — Event Editing: edge cases", () => {
   it("admin can edit an event they do not own → 302", async () => {
     const staffAgent = await loginAs(app, "staff");

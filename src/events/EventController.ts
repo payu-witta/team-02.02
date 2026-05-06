@@ -71,7 +71,7 @@ class EventController implements IEventController {
   }
 
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
-    res.render("events/create", { session, pageError: null });
+    res.render("events/create", { session, pageError: null, formValues: null });
   }
 
   async createFromForm(
@@ -96,9 +96,10 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Create event failed: ${result.value.message}`);
-      res.status(status).render("events/create", {
+      res.status(isHtmx ? 200 : status).render("events/create", {
         session,
         pageError: result.value.message,
+        formValues: body,
         layout: isHtmx ? false : undefined,
       });
       return;
@@ -172,7 +173,7 @@ class EventController implements IEventController {
       const eventResult = await this.service.getEventById(eventId);
       const event = eventResult.ok ? eventResult.value : null;
 
-      res.status(status).render("events/edit", {
+      res.status(isHtmx ? 200 : status).render("events/edit", {
         session,
         event,
         pageError: result.value.message,
