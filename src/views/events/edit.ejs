@@ -39,7 +39,7 @@
       }
     }"
     x-on:submit="submit"
-    x-on:beforeunload.window="if (isDirty) $event.preventDefault()"
+    x-on:beforeunload.window="if (isDirty) { $event.preventDefault(); $event.returnValue = ''; }"
   >
 
     <div
@@ -66,14 +66,18 @@
       />
     </div>
 
-    <div class="grid gap-1.5">
-      <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+    <div class="grid gap-1.5" x-data="{ descLen: <%= (event.description || '').length %> }">
+      <div class="flex items-baseline justify-between">
+        <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+        <span class="text-xs" :class="descLen >= 1000 ? 'text-red-500 font-medium' : 'text-slate-400'" x-text="descLen + ' / 1000'"></span>
+      </div>
       <textarea
         id="description"
         name="description"
         rows="4"
         required
         maxlength="1000"
+        x-on:input="descLen = $el.value.length"
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500 resize-y"
       ><%= event.description %></textarea>
     </div>
