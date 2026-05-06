@@ -32,13 +32,12 @@
 
     <div class="flex items-center gap-2">
       <% if (canManage) { %>
-        
         <% if (event.status === 'draft') { %>
           <button 
             hx-post="/events/<%= event.id %>/publish"
             hx-target="#event-header-<%= event.id %>"
             hx-swap="outerHTML"
-            class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors">
+            class="px-5 py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all active:scale-95 shadow-md shadow-green-200">
             Publish Draft
           </button>
         <% } %>
@@ -49,7 +48,7 @@
             hx-target="#event-header-<%= event.id %>"
             hx-swap="outerHTML"
             hx-confirm="Are you sure you want to cancel this event?"
-            class="px-4 py-2 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors">
+            class="px-5 py-2 rounded-xl bg-white border border-rose-200 text-rose-600 text-sm font-bold hover:bg-rose-50 transition-all active:scale-95">
             Cancel Event
           </button>
         <% } %>
