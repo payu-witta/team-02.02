@@ -172,7 +172,7 @@ class EventController implements IEventController {
       const eventResult = await this.service.getEventById(eventId);
       const event = eventResult.ok ? eventResult.value : null;
 
-      res.status(status).render("events/edit", {
+      res.status(isHtmx ? 200 : status).render("events/edit", {
         session,
         event,
         pageError: result.value.message,
