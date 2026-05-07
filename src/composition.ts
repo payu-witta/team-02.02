@@ -50,7 +50,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const myRsvpsService = CreateMyRsvpsService(rsvpRepo, eventRepo);
   const myRsvpsController = CreateMyRsvpsController(myRsvpsService, resolvedLogger);
 
-  return CreateApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, myRsvpsController, resolvedLogger);
+  return CreateApp(authController, rsvpController, eventController, eventFilterService, eventDetailController, myRsvpsController, resolvedLogger, eventService, myRsvpsService);
 
 }
 
