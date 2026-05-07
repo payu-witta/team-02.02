@@ -22,6 +22,8 @@ import { ILoggingService } from "./service/LoggingService";
 import { IEventDetailController } from "./events/EventDetailController";
 import type { IEventController } from "./events/IEventController";
 import type { IEventFilterService } from "./events/EventService";
+import type { IEventService } from "./events/IEventService";
+import type { IMyRsvpsService } from "./rsvp/MyRsvpsService";
 type AsyncRequestHandler = RequestHandler;
 
 function asyncHandler(fn: AsyncRequestHandler) {
@@ -38,13 +40,15 @@ class ExpressApp implements IApp {
   private readonly app: express.Express;
 
   constructor(
-private readonly authController: IAuthController,
+    private readonly authController: IAuthController,
     private readonly rsvpController: IRsvpController,
     private readonly eventController: IEventController,
     private readonly eventFilterService: IEventFilterService,
     private readonly eventDetailController: IEventDetailController,
     private readonly myRsvpsController: IMyRsvpsController,
     private readonly logger: ILoggingService,
+    private readonly eventService: IEventService,
+    private readonly myRsvpsService: IMyRsvpsService,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -408,13 +412,28 @@ private readonly authController: IAuthController,
     this.app.get(
       "/home",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
+        if (!this.requireAuthenticated(req, res)) return;
 
-        const browserSession = recordPageView(sessionStore(req));
+        const store = sessionStore(req);
+        const browserSession = recordPageView(store);
+        const currentUser = getAuthenticatedUser(store)!;
         this.logger.info(`GET /home for ${browserSession.browserLabel}`);
-        res.render("home", { session: browserSession, pageError: null });
+
+        if (currentUser.role === "user") {
+          const result = await this.myRsvpsService.getMyRsvps({
+            userId: currentUser.userId,
+            userRole: currentUser.role,
+          });
+          const { upcoming, history } = result.value;
+          res.render("home", { session: browserSession, pageError: null, upcoming, history });
+        } else {
+          const result = await this.eventService.getOrganizerDashboard(
+            currentUser.userId,
+            currentUser.role,
+          );
+          const groups = result.ok ? result.value : { published: [], draft: [], archived: [] };
+          res.render("home", { session: browserSession, pageError: null, groups });
+        }
       }),
     );
 
@@ -444,6 +463,8 @@ export function CreateApp(
   eventDetailController: IEventDetailController,
   myRsvpsController: IMyRsvpsController,
   logger: ILoggingService,
+  eventService: IEventService,
+  myRsvpsService: IMyRsvpsService,
 ): IApp {
   return new ExpressApp(
     authController,
@@ -453,6 +474,8 @@ export function CreateApp(
     eventDetailController,
     myRsvpsController,
     logger,
+    eventService,
+    myRsvpsService,
   );
 }
 
