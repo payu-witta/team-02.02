@@ -13,8 +13,8 @@
     <strong>Attendee count:</strong> <%= attendeeCount %> / <%= event.capacity || 'No limit' %>
   </p>
 
-<% if (showRsvpButton) { %>
-    <%- include('../rsvp/partials/button', { eventId: event.id, rsvp: currentUserRsvp, waitlistPosition }) %>
+  <% if (showRsvpButton) { %>
+      <%- include('../rsvp/partials/button', { eventId: event.id, rsvp: currentUserRsvp, waitlistPosition }) %>
   <% } %>
 </div>
 
