@@ -38,7 +38,7 @@
                     <p class="text-sm text-slate-500"><%= event.startDatetime.toLocaleString() %></p>
                   </div>
 
-                  <span class="px-3 py-1 rounded-full text-xs font-semibold
+                  <span class="capitalize px-3 py-1 rounded-full text-xs font-semibold
                     <%= rsvp.status === 'waitlisted'
                       ? 'bg-amber-100 text-amber-800'
                       : rsvp.status === 'cancelled'
@@ -55,13 +55,13 @@
                     x-on:submit="if (!confirm('Are you sure you want to cancel this RSVP?')) $event.preventDefault()"
                     hx-post="/events/<%= event.id %>/rsvp"
                     hx-target="#rsvp-row-<%= event.id %>"
-                    hx-swap="outerHTML"
+                    hx-swap="delete"
                   >
                     <button
                       type="submit"
                       class="px-3 py-2 rounded-lg bg-slate-700 text-sm font-semibold text-white hover:bg-slate-800"
                     >
-                      Cancel RSVP
+                      <%= rsvp.status === 'waitlisted' ? 'Leave Waitlist' : 'Cancel RSVP' %>
                     </button>
                   </form>
                 <% } %>
