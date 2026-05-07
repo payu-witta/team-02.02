@@ -2,12 +2,12 @@
   <%- include("../partials/error", { message: "Event could not be loaded." }) %>
 <% } else { %>
 
+<div id="edit-form-section">
+
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
   <h1 class="text-3xl font-bold text-slate-900 mb-1">Edit Event</h1>
   <p class="text-slate-500">Update the details below. Changes will be saved to the draft.</p>
 </section>
-
-<div id="edit-form-section">
 
 <% if (pageError) { %>
   <%- include("../partials/error", { message: pageError }) %>
@@ -21,7 +21,37 @@
     hx-post="/events/<%= event.id %>/edit"
     hx-target="#edit-form-section"
     hx-swap="outerHTML"
+    x-data="{
+      isDirty: false,
+      snapshot: {},
+      init() {
+        const fields = this.$el.querySelectorAll('input, textarea, select');
+        fields.forEach(f => { this.snapshot[f.name] = f.value; });
+        this.$el.addEventListener('input', () => this.checkDirty());
+        this.$el.addEventListener('change', () => this.checkDirty());
+      },
+      checkDirty() {
+        const fields = this.$el.querySelectorAll('input, textarea, select');
+        this.isDirty = Array.from(fields).some(f => f.value !== this.snapshot[f.name]);
+      },
+      submit() {
+        this.isDirty = false;
+      }
+    }"
+    x-on:submit="submit"
+    x-on:beforeunload.window="if (isDirty) { $event.preventDefault(); $event.returnValue = ''; }"
   >
+
+    <div
+      x-show="isDirty"
+      x-cloak
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+      </svg>
+      You have unsaved changes
+    </div>
 
     <div class="grid gap-1.5">
       <label for="title" class="text-sm font-medium">Title <span class="text-red-500">*</span></label>
@@ -36,14 +66,18 @@
       />
     </div>
 
-    <div class="grid gap-1.5">
-      <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+    <div class="grid gap-1.5" x-data="{ descLen: <%= (event.description || '').length %> }">
+      <div class="flex items-baseline justify-between">
+        <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+        <span class="text-xs" :class="descLen >= 1000 ? 'text-red-500 font-medium' : 'text-slate-400'" x-text="descLen + ' / 1000'"></span>
+      </div>
       <textarea
         id="description"
         name="description"
         rows="4"
         required
         maxlength="1000"
+        x-on:input="descLen = $el.value.length"
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500 resize-y"
       ><%= event.description %></textarea>
     </div>
@@ -117,7 +151,7 @@
     <div class="flex items-center gap-3 pt-2">
       <button
         type="submit"
-        class="px-4 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700"
+        class="px-4 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 transition-colors"
       >
         Save Changes
       </button>

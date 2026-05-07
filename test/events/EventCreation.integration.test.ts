@@ -88,6 +88,39 @@ describe("Feature 1 — Event Creation: edge cases", () => {
   });
 });
 
+describe("Feature 1 — Event Creation: HTMX validation errors", () => {
+  it("end before start via HTMX → 200 with error message in body", async () => {
+    const agent = await loginAs(app, "staff");
+    const body = {
+      ...validBody,
+      startDatetime: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 16),
+      endDatetime:   new Date(Date.now() + 86_400_000).toISOString().slice(0, 16),
+    };
+
+    const res = await agent
+      .post("/events")
+      .set("HX-Request", "true")
+      .type("form")
+      .send(body);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("End date/time must be after start date/time.");
+  });
+
+  it("blank title via HTMX → 200 with error message in body", async () => {
+    const agent = await loginAs(app, "staff");
+
+    const res = await agent
+      .post("/events")
+      .set("HX-Request", "true")
+      .type("form")
+      .send({ ...validBody, title: "" });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Title");
+  });
+});
+
 describe("Feature 1 — Event Creation: unauthorized access", () => {
   it("member (user role) is rejected with 403", async () => {
     const agent = await loginAs(app, "user");

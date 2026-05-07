@@ -1,9 +1,9 @@
+<div id="create-form-section">
+
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
   <h1 class="text-3xl font-bold text-slate-900 mb-1">Create Event</h1>
   <p class="text-slate-500">Fill out the form below to create a new draft event.</p>
 </section>
-
-<div id="create-form-section">
 
 <% if (pageError) { %>
   <%- include("../partials/error", { message: pageError }) %>
@@ -27,20 +27,25 @@
         type="text"
         required
         maxlength="100"
+        value="<%= formValues?.title ?? '' %>"
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
       />
     </div>
 
-    <div class="grid gap-1.5">
-      <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+    <div class="grid gap-1.5" x-data="{ descLen: 0 }">
+      <div class="flex items-baseline justify-between">
+        <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+        <span class="text-xs" :class="descLen >= 1000 ? 'text-red-500 font-medium' : 'text-slate-400'" x-text="descLen + ' / 1000'"></span>
+      </div>
       <textarea
         id="description"
         name="description"
         rows="4"
         required
         maxlength="1000"
+        x-on:input="descLen = $el.value.length"
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500 resize-y"
-      ></textarea>
+      ><%= formValues?.description ?? '' %></textarea>
     </div>
 
     <div class="grid gap-1.5">
@@ -50,6 +55,7 @@
         name="location"
         type="text"
         required
+        value="<%= formValues?.location ?? '' %>"
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
       />
     </div>
@@ -62,12 +68,12 @@
         required
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
       >
-        <option value="" disabled selected>Select a category</option>
-        <option value="social">Social</option>
-        <option value="educational">Educational</option>
-        <option value="volunteer">Volunteer</option>
-        <option value="sports">Sports</option>
-        <option value="arts">Arts</option>
+        <option value="" disabled <%= !formValues?.category ? 'selected' : '' %>>Select a category</option>
+        <option value="social"      <%= formValues?.category === 'social'      ? 'selected' : '' %>>Social</option>
+        <option value="educational" <%= formValues?.category === 'educational' ? 'selected' : '' %>>Educational</option>
+        <option value="volunteer"   <%= formValues?.category === 'volunteer'   ? 'selected' : '' %>>Volunteer</option>
+        <option value="sports"      <%= formValues?.category === 'sports'      ? 'selected' : '' %>>Sports</option>
+        <option value="arts"        <%= formValues?.category === 'arts'        ? 'selected' : '' %>>Arts</option>
       </select>
     </div>
 
@@ -79,6 +85,7 @@
         type="number"
         min="1"
         step="1"
+        value="<%= formValues?.capacity ?? '' %>"
         class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
       />
     </div>
@@ -91,6 +98,7 @@
           name="startDatetime"
           type="datetime-local"
           required
+          value="<%= formValues?.startDatetime ?? '' %>"
           class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
         />
       </div>
@@ -101,6 +109,7 @@
           name="endDatetime"
           type="datetime-local"
           required
+          value="<%= formValues?.endDatetime ?? '' %>"
           class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
         />
       </div>
@@ -109,7 +118,7 @@
     <div class="flex items-center gap-3 pt-2">
       <button
         type="submit"
-        class="px-4 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700"
+        class="px-4 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 transition-colors"
       >
         Create Event
       </button>

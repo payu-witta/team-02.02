@@ -71,7 +71,7 @@ class EventController implements IEventController {
   }
 
   async showCreateForm(res: Response, session: IAppBrowserSession): Promise<void> {
-    res.render("events/create", { session, pageError: null });
+    res.render("events/create", { session, pageError: null, formValues: null });
   }
 
   async createFromForm(
@@ -96,9 +96,10 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const status = mapErrorStatus(result.value);
       this.logger.warn(`Create event failed: ${result.value.message}`);
-      res.status(status).render("events/create", {
+      res.status(isHtmx ? 200 : status).render("events/create", {
         session,
         pageError: result.value.message,
+        formValues: body,
         layout: isHtmx ? false : undefined,
       });
       return;
@@ -172,7 +173,7 @@ class EventController implements IEventController {
       const eventResult = await this.service.getEventById(eventId);
       const event = eventResult.ok ? eventResult.value : null;
 
-      res.status(status).render("events/edit", {
+      res.status(isHtmx ? 200 : status).render("events/edit", {
         session,
         event,
         pageError: result.value.message,
@@ -307,7 +308,13 @@ class EventController implements IEventController {
       res.status(400).render("partials/error", { message: result.value.message, layout: false });
       return;
     }
-    res.render("events/list", { session, events: result.value, category, timeframe });
+    res.render("events/list", {
+      session,
+      events: result.value,
+      query: undefined,
+      category: category ?? "",
+      timeframe: timeframe ?? "upcoming",
+    });
   }
 
   async searchEvents(
@@ -318,10 +325,23 @@ class EventController implements IEventController {
     const result = await this.service.searchEvents({ query });
     if (result.ok === false) {
       this.logger.warn(`Search events failed: ${result.value.message}`);
-      res.status(500).render("events/search", { session, pageError: result.value.message });
+      res.status(400).render("events/list", {
+        session,
+        events: [],
+        query,
+        pageError: result.value.message,
+        category: undefined,
+        timeframe: undefined,
+      });
       return;
     }
-    res.render("events/list", { session, events: result.value, query });
+    res.render("events/list", { 
+      session, 
+      events: result.value,
+      query,
+      category: undefined,
+      timeframe: undefined
+    });
   }
 }
 

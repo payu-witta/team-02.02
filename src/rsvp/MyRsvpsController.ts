@@ -22,7 +22,7 @@ class MyRsvpsController implements IMyRsvpsController {
       return;
     }
     if (user.role !== "user"){
-      res.status(403).send("Bad");
+      res.status(403).send("Forbidden");
       return;
     }
 

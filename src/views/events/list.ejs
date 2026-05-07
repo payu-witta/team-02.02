@@ -1,34 +1,76 @@
 <div id="event-list-page">
 
+  <% if (typeof pageError !== 'undefined' && pageError) { %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+      <%= pageError %>
+    </div>
+  <% } %>
+
   <%# Search input - Feature 10 %>
-  <input 
-    type="search"
-    name="q"
-    value="<%= typeof query !== 'undefined' ? query : '' %>"
-    placeholder="Search events..."
+  <form
+    x-data='{ query: "<%= typeof query !== "undefined" ? query : "" %>" }'
+    action="/events/search"
+    method="GET"
     hx-get="/events/search"
-    hx-trigger="input changed delay:300ms"
+    hx-trigger="input changed delay:300ms from:find input[name='query'], submit"
     hx-target="#event-list-page"
+    hx-select="#event-list-page"
     hx-swap="outerHTML"
     hx-push-url="true"
-    class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white shadow-sm mb-4"
-  />
+    class="relative mb-6"
+  >
+    <input
+      type="text"
+      name="query"
+      x-model="query"
+      placeholder="Search events..."
+      class="w-full px-4 py-3 pr-12 rounded-xl border border-slate-300 bg-white shadow-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+
+    <button
+      type="button"
+      x-show="query.length > 0"
+      x-transition
+      @click="
+      query = '';
+      htmx.ajax('GET', '/events', {
+        target: '#event-list-page',
+        swap: 'outerHTML',
+        select: '#event-list-page',
+        headers: { 'HX-Push-Url': '/events' }
+      })
+      "      
+      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 z-10"
+      aria-label="Clear search"
+    >
+      ✕
+    </button>
+  </form>
 
   <%# Filter bar — Feature 6 %>  
   <form
+    x-data='{
+      category: <%- JSON.stringify(category || "") %>,
+      timeframe: <%- JSON.stringify(timeframe || "upcoming") %>,
+      get hasFilters() {
+          return this.category !== "" || this.timeframe !== "upcoming"
+        }
+    }'
     action="/events"
     method="GET"
     hx-get="/events"
+    hx-trigger="change from:select"
     hx-target="#event-list-page"
+    hx-select="#event-list-page"
     hx-swap="outerHTML"
     hx-push-url="true"
-    class="flex gap-3 mb-6"
+    class="flex flex-wrap items-center gap-3 mb-6 p-3 rounded-xl border border-slate-200 bg-white shadow-sm"
   >
-    <select
-      name="category"
-      hx-trigger="change"
-      class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
-    >
+  <select
+    name="category"
+    x-model="category"
+    class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  >
       <option value="">All categories</option>
       <option value="social"      <%= category === 'social'      ? 'selected' : '' %>>Social</option>
       <option value="educational" <%= category === 'educational' ? 'selected' : '' %>>Educational</option>
@@ -39,30 +81,53 @@
 
     <select
       name="timeframe"
-      hx-trigger="change"
-      class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+      x-model="timeframe"
+      class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <option value="upcoming"     <%= timeframe === 'upcoming'     ? 'selected' : '' %>>All upcoming</option>
       <option value="this_week"    <%= timeframe === 'this_week'    ? 'selected' : '' %>>This week</option>
       <option value="this_weekend" <%= timeframe === 'this_weekend' ? 'selected' : '' %>>This weekend</option>
     </select>
 
+    <a 
+      x-show="hasFilters"
+      x-transition
+      href="/events"
+      class="ml-auto px-3 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
+      >
+      Clear filters
+    </a>
+  
     <noscript>
       <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Apply</button>
     </noscript>
   </form>
 
   <% if (!events || events.length === 0) { %>
-    <p>No events found.</p>
+    <p class="py-12 text-center text-slate-400 text-sm">No events found.</p>
   <% } else { %>
-    <% events.forEach((event) => { %>
-      <article class="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <h2><%= event.title %></h2>
-        <p><strong>Category:</strong> <%= event.category %></p>
-        <p><strong>Location:</strong> <%= event.location %></p>
-        <p><%= event.description %></p>
-      </article>
-    <% }) %>
+    <div class="flex flex-col gap-3">
+      <% events.forEach((event) => { %>
+        <a href="/events/<%= event.id %>" class="block group">
+          <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <h2 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors"><%= event.title %></h2>
+                <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 capitalize"><%= event.category %></span>
+                  <span class="text-sm text-slate-500"><%= event.location %></span>
+                  <span class="text-sm text-slate-400"><%= event.startDatetime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
+                </div>
+                <p class="mt-2 text-sm text-slate-600 line-clamp-2"><%= event.description %></p>
+              </div>
+              <svg class="flex-shrink-0 w-5 h-5 text-slate-300 group-hover:text-blue-400 transition-colors mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </article>
+        </a>
+      <% }) %>
+    </div>
   <% } %>
 
 </div>

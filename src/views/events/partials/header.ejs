@@ -1,10 +1,10 @@
 <%
   const statusColors = {
-    draft:     "bg-slate-100 text-slate-600 border-slate-200",
-    published: "bg-green-50 text-green-700 border-green-200",
-    cancelled: "bg-red-50 text-red-700 border-red-200",
-    past:      "bg-slate-100 text-slate-500 border-slate-200",
-  };
+  draft:     "bg-slate-100 text-slate-600 border-slate-200",
+  published: "bg-green-100 text-green-800 border-green-200 shadow-sm shadow-green-100",
+  cancelled: "bg-rose-100 text-rose-800 border-rose-200",
+  past:      "bg-slate-200 text-slate-600 border-slate-300",
+};
 
   const canManage = session.authenticatedUser && 
     (session.authenticatedUser.role === 'admin' || 
@@ -16,7 +16,12 @@
     
     <div>
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= statusColors[event.status] %>">
+        <span 
+            x-data="{ show: false }" 
+            x-init="setTimeout(() => show = true, 50)"
+            :class="show ? 'scale-100 opacity-100' : 'scale-90 opacity-0'"
+            class="transform transition-all duration-500 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border <%= statusColors[event.status] %>"
+          >
           <%= event.status %>
         </span>
         <span class="text-xs text-slate-400 capitalize ml-2"><%= event.category %></span>
@@ -27,13 +32,12 @@
 
     <div class="flex items-center gap-2">
       <% if (canManage) { %>
-        
         <% if (event.status === 'draft') { %>
           <button 
             hx-post="/events/<%= event.id %>/publish"
             hx-target="#event-header-<%= event.id %>"
             hx-swap="outerHTML"
-            class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors">
+            class="px-5 py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all active:scale-95 shadow-md shadow-green-200">
             Publish Draft
           </button>
         <% } %>
@@ -44,7 +48,7 @@
             hx-target="#event-header-<%= event.id %>"
             hx-swap="outerHTML"
             hx-confirm="Are you sure you want to cancel this event?"
-            class="px-4 py-2 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors">
+            class="px-5 py-2 rounded-xl bg-white border border-rose-200 text-rose-600 text-sm font-bold hover:bg-rose-50 transition-all active:scale-95">
             Cancel Event
           </button>
         <% } %>
